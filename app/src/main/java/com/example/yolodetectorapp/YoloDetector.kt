@@ -35,7 +35,7 @@ class YoloDetector(context: Context) {
             "25_amp",   // 3
             "2_amp",    // 4
             "30_amp",   // 5
-            "3_amp",
+            "3_amp",    // 6
             "5_amp",    // 7
             "7.5_amp",  // 8
             "empty"     // 9
