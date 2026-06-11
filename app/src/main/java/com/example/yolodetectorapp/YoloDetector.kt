@@ -190,5 +190,5 @@ class YoloDetector(context: Context) {
         val inputStream = FileInputStream(fd.fileDescriptor)
         return inputStream.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
     }
-    fun close() = interpreter.close()
+    //fun close() = interpreter.close()
 }

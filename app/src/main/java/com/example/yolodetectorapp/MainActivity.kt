@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.graphics.RectF
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -24,7 +25,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overlayView: OverlayView
     private lateinit var roiView: android.view.View
     private lateinit var btnCapture: Button
+    private lateinit var btnFlash: ImageButton
     private lateinit var imageCapture: ImageCapture
+
+    private var flashEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +38,20 @@ class MainActivity : AppCompatActivity() {
         overlayView = findViewById(R.id.overlayView)
         roiView     = findViewById(R.id.roiView)
         btnCapture  = findViewById(R.id.btnCapture)
+        btnFlash    = findViewById(R.id.btnFlash)
+
+        btnFlash.setOnClickListener {
+            flashEnabled = !flashEnabled
+            btnFlash.setImageResource(
+                if (flashEnabled) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+            )
+            if (::imageCapture.isInitialized) {
+                imageCapture.flashMode = if (flashEnabled)
+                    ImageCapture.FLASH_MODE_ON
+                else
+                    ImageCapture.FLASH_MODE_OFF
+            }
+        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) {
@@ -131,6 +149,7 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder()
                 .setResolutionSelector(resolutionSelector)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setFlashMode(ImageCapture.FLASH_MODE_OFF)
                 .build()
 
             cameraProvider.unbindAll()

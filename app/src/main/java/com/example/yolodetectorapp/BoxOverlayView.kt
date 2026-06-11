@@ -10,20 +10,26 @@ class BoxOverlayView @JvmOverloads constructor(
 ) : View(context, attrs, defStyle) {
 
     private val classColors = mapOf(
-        "10_amp"   to Color.parseColor("#F44336"),
-        "15_amp"   to Color.parseColor("#2196F3"),
-        "20_amp" to Color.parseColor("#FFEB3B"),
+        "10_amp"  to Color.parseColor("#F44336"),
+        "15_amp"  to Color.parseColor("#2196F3"),
+        "20_amp"  to Color.parseColor("#FFEB3B"),
         "25_amp"  to Color.parseColor("#FFFFFF"),
-        "2_amp"  to Color.parseColor("#9C27B0"),
+        "2_amp"   to Color.parseColor("#9C27B0"),
         "30_amp"  to Color.parseColor("#4CAF50"),
-        "5_amp"  to Color.parseColor("#A0785A"),
-        "7.5_amp"  to Color.parseColor("#795548"),
+        "3_amp"   to Color.parseColor("#3DAD3A"),   // FIX 4: eksik renk eklendi
+        "5_amp"   to Color.parseColor("#A0785A"),
+        "7.5_amp" to Color.parseColor("#795548"),
         "empty"   to Color.parseColor("#9E9E9E")
     )
 
     private val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f
+    }
+    // FIX 3: döngü dışına alındı, her onDraw'da yeni nesne oluşturulmuyor
+    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        alpha = 30
     }
     private val labelBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -41,20 +47,19 @@ class BoxOverlayView @JvmOverloads constructor(
     }
 
     private var detections: List<Detection> = emptyList()
-    private var srcW = 0      // kamera bitmap genişliği
-    private var srcH = 0      // kamera bitmap yüksekliği
-    private var pvW  = 0      // PreviewView genişliği
-    private var pvH  = 0      // PreviewView yüksekliği
+    private var srcW = 0
+    private var srcH = 0
+    private var pvW  = 0
+    private var pvH  = 0
     private var fitCenter = false
+
     fun setDetections(list: List<Detection>,
                       bitmapW: Int, bitmapH: Int,
                       previewW: Int, previewH: Int,
                       useFitCenter: Boolean = false) {
         detections = list
-        srcW = bitmapW
-        srcH = bitmapH
-        pvW  = previewW
-        pvH  = previewH
+        srcW = bitmapW; srcH = bitmapH
+        pvW  = previewW; pvH  = previewH
         fitCenter = useFitCenter
         invalidate()
     }
@@ -63,11 +68,10 @@ class BoxOverlayView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (detections.isEmpty() || srcW <= 0 || srcH <= 0 || pvW <= 0 || pvH <= 0) return
 
-        val scale = if (fitCenter) {
+        val scale = if (fitCenter)
             minOf(width.toFloat() / srcW, height.toFloat() / srcH)
-        } else {
+        else
             maxOf(width.toFloat() / srcW, height.toFloat() / srcH)
-        }
 
         val scaledW = srcW * scale
         val scaledH = srcH * scale
@@ -82,24 +86,16 @@ class BoxOverlayView @JvmOverloads constructor(
             val right  = offsetX + det.box.right   * scaledW
             val bottom = offsetY + det.box.bottom  * scaledH
 
-            // Ekran dışındaki kutuları çizme
             if (right < 0 || left > pvW || bottom < 0 || top > pvH) continue
 
             val rect = RectF(left, top, right, bottom)
 
-            // Hafif dolgu
-            val bgPaint = Paint().apply {
-                style = Paint.Style.FILL
-                this.color = color
-                alpha = 30
-            }
-            canvas.drawRoundRect(rect, 8f, 8f, bgPaint)
+            fillPaint.color = color   // FIX 3: sınıf üyesi, sadece rengi değiştiriyoruz
+            canvas.drawRoundRect(rect, 8f, 8f, fillPaint)
 
-            // Kutu
             boxPaint.color = color
             canvas.drawRoundRect(rect, 8f, 8f, boxPaint)
 
-            // Köşe L'leri
             val cl = 14f
             cornerPaint.color = color
             canvas.drawLine(left, top + cl, left, top, cornerPaint)
@@ -111,20 +107,15 @@ class BoxOverlayView @JvmOverloads constructor(
             canvas.drawLine(right - cl, bottom, right, bottom, cornerPaint)
             canvas.drawLine(right, bottom, right, bottom - cl, cornerPaint)
 
-            // Label
-            val label = det.className
+            val label   = det.className
             val padding = 2f
-            val textW = textPaint.measureText(label)
-            val textH = textPaint.descent() - textPaint.ascent()
-            val labelH = textH + padding * 2
-
+            val textW   = textPaint.measureText(label)
+            val textH   = textPaint.descent() - textPaint.ascent()
+            val labelH  = textH + padding * 2
             val labelTop  = if (top - labelH >= 0f) top - labelH else top
             val labelLeft = minOf(left, pvW - textW - padding * 2)
-
-            val labelRect = RectF(
-                labelLeft, labelTop,
-                labelLeft + textW + padding * 2, labelTop + labelH
-            )
+            val labelRect = RectF(labelLeft, labelTop,
+                labelLeft + textW + padding * 2, labelTop + labelH)
 
             labelBgPaint.color = color
             canvas.drawRoundRect(labelRect, 4f, 4f, labelBgPaint)

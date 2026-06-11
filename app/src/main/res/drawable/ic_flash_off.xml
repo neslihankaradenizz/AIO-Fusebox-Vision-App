@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Flash bolt (gri) -->
+    <path
+        android:fillColor="#888888"
+        android:pathData="M7,2v11h3v9l7,-12h-4l4,-8z"/>
+    <!-- Çapraz çizgi (kapalı göstergesi) -->
+    <path
+        android:strokeColor="#FF3333"
+        android:strokeWidth="2"
+        android:pathData="M3,3 L21,21"/>
+</vector>

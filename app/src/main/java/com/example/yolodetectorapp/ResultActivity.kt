@@ -33,10 +33,7 @@ class ResultActivity : AppCompatActivity() {
         setContentView(R.layout.activity_result)
 
         val bmp = pendingBitmap
-        if (bmp == null || bmp.isRecycled) {
-            finish()
-            return
-        }
+        if (bmp == null || bmp.isRecycled) { finish(); return }
 
         val imageView  = findViewById<ImageView>(R.id.resultImageView)
         val boxOverlay = findViewById<BoxOverlayView>(R.id.resultBoxOverlay)
@@ -47,26 +44,28 @@ class ResultActivity : AppCompatActivity() {
         val btnRetake  = findViewById<Button>(R.id.btnRetake)
 
         imageView.setImageBitmap(bmp)
-
         tvDebug.text = "🔍 Analiz ediliyor..."
         tvDebug.setTextColor("#FFFFFF".toColorInt())
         btnMatch.isEnabled = false
 
+        // FIX 5: btnRetake listener burada set edilmeli, btnMatch içinde değil
+        btnRetake.setOnClickListener { finish() }
+
         lifecycleScope.launch {
+            // FIX 1: Detector kullandıktan sonra kapatılıyor
             val detections = withContext(Dispatchers.Default) {
-                YoloDetector(this@ResultActivity).detect(bmp)
+                val detector = YoloDetector(this@ResultActivity)
+                val result = detector.detect(bmp)
+                detector.close()
+                result
             }
 
             pendingDetections = detections
 
             imageView.post {
                 boxOverlay.setDetections(
-                    detections,
-                    bmp.width,
-                    bmp.height,
-                    imageView.width,
-                    imageView.height,
-                    useFitCenter = true
+                    detections, bmp.width, bmp.height,
+                    imageView.width, imageView.height, useFitCenter = true
                 )
             }
 
@@ -85,8 +84,10 @@ class ResultActivity : AppCompatActivity() {
             btnMatch.isEnabled = true
         }
 
-        // Görüntü Eşleştir
         btnMatch.setOnClickListener {
+            // FIX 2: Çift tıklamayı engelle
+            btnMatch.isEnabled = false
+
             lifecycleScope.launch {
                 try {
                     val db = AppDatabase.getInstance(applicationContext)
@@ -94,23 +95,17 @@ class ResultActivity : AppCompatActivity() {
                         db.combinationDao().getAll()
                     }
 
-                    // ← combinationId = null: tüm kombinasyonları sırayla kontrol eder
                     val matchedId = CombinationChecker.check(
-                        pendingDetections,
-                        validEntries,
-                        combinationId = null
+                        pendingDetections, validEntries, combinationId = null
                     )
 
                     tvResult.visibility = View.VISIBLE
                     tvResult.bringToFront()
 
                     if (matchedId != null) {
-                        // OK — hangi kombinasyona ait olduğunu loga yaz
                         tvResult.text = "OK"
                         tvResult.setTextColor("#00C853".toColorInt())
-                        android.util.Log.d("YOLO", "Eşleşen kombinasyon: $matchedId")
                     } else {
-                        // NOK — hiçbir kombinasyon tutmadı
                         tvResult.text = "NOK"
                         tvResult.setTextColor("#FF1744".toColorInt())
                     }
@@ -118,15 +113,14 @@ class ResultActivity : AppCompatActivity() {
                     btnMatch.visibility = View.GONE
                     btnTable.visibility = View.VISIBLE
                     btnRetake.visibility = View.VISIBLE
-                    btnRetake.setOnClickListener { finish() }
 
                 } catch (e: Exception) {
-                    android.util.Log.e("YOLO", "HATA: ${e.message}", e)
+                    android.util.Log.e("YOLO", "Eşleştirme hatası: ${e.message}", e)
+                    btnMatch.isEnabled = true  // hata olursa tekrar aktif et
                 }
             }
         }
 
-        // Tespit Tablosu
         btnTable.setOnClickListener {
             FuseTableDialog(this, pendingDetections).show()
         }
