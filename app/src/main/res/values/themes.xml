@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+<style name="Base.Theme.YoloDetectorApp" parent="Theme.Material3.DayNight.NoActionBar">
+</style>
+
+<style name="Theme.YoloDetectorApp" parent="Base.Theme.YoloDetectorApp">
+    <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+</style>
+</resources>

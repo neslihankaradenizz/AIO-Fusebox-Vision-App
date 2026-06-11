@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:scaleType="fillCenter"/>
+
+    <!--ROI disi karatma-->
+    <com.example.yolodetectorapp.OverlayView
+        android:id="@+id/overlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <!-- ROI KUTUSU -->
+    <View
+        android:id="@+id/roiView"
+        android:layout_width="350dp"
+        android:layout_height="450dp"
+        android:layout_gravity="center" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="32dp"
+        android:text="Kamerayı ilgili bölgeye yaklaştırınız"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:background="#88000000"
+        android:padding="10dp"/>
+
+    <Button
+        android:id="@+id/btnCapture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="55dp"
+        android:backgroundTint="#FF0000"
+        android:textColor="#FFFFFF"
+        android:text="Fotoğraf Çek"
+        android:textSize="25sp"/>
+
+</FrameLayout>
