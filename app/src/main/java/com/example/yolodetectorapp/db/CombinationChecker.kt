@@ -20,9 +20,6 @@ object CombinationChecker {
 
         val detectedIds = (leftCol + rightCol).map { it.classId }
 
-        android.util.Log.d("YOLO", "Sol: ${leftCol.size}, Sağ: ${rightCol.size}, Toplam: ${detections.size}")
-        android.util.Log.d("YOLO", "Tespit sırası: $detectedIds")
-
         val entriesToCheck = if (combinationId != null)
             validEntries.filter { it.combinationId == combinationId }
         else

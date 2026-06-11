@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import org.json.JSONObject
 
-@Database(entities = [ValidCombination::class], version = 3, exportSchema = false)
+@Database(entities = [ValidCombination::class], version =5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun combinationDao(): CombinationDao
 

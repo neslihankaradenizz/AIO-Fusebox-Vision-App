@@ -20,11 +20,12 @@ data class Detection(
 class YoloDetector(context: Context) {
 
     companion object {
-        private const val MODEL_FILE   = "fuseboxV1.tflite"
+        private const val MODEL_FILE   = "fusebox_model_float32.tflite"
         private const val INPUT_SIZE   = 1024
         private const val SCORE_THRESH = 0.25f
+
         private const val IOU_THRESH   = 0.45f
-        private const val NUM_CLASSES  = 9 //sinif sayisi
+        private const val NUM_CLASSES  = 10 //sinif sayisi
         private const val NUM_DETS     = 21504
 
         val LABELS = listOf(
@@ -34,9 +35,10 @@ class YoloDetector(context: Context) {
             "25_amp",   // 3
             "2_amp",    // 4
             "30_amp",   // 5
-            "5_amp",    // 6
-            "7.5_amp",  // 7
-            "empty"     // 8
+            "3_amp",
+            "5_amp",    // 7
+            "7.5_amp",  // 8
+            "empty"     // 9
         )
     }
 
@@ -190,5 +192,5 @@ class YoloDetector(context: Context) {
         val inputStream = FileInputStream(fd.fileDescriptor)
         return inputStream.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
     }
-    //fun close() = interpreter.close()
+    fun close() = interpreter.close()
 }

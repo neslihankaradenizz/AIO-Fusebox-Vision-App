@@ -3,6 +3,7 @@ package com.example.yolodetectorapp
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -12,6 +13,14 @@ import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.widget.*
+import com.example.yolodetectorapp.db.AppDatabase
+import com.example.yolodetectorapp.db.CombinationChecker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FuseTableDialog(
     context: Context,
@@ -28,18 +37,19 @@ class FuseTableDialog(
         "3_amp"   to Color.parseColor("#3DAD3A"),
         "5_amp"   to Color.parseColor("#7B4FD6"),
         "7.5_amp" to Color.parseColor("#D46320"),
-        "empty"   to Color.parseColor("#555570")
+        "empty"   to Color.parseColor("#666680")
     )
 
     private val j3Labels = listOf("F10","F11","F12","F13","F14","F15","F16","F17","TEST")
 
-    private val BG_DIALOG   = Color.parseColor("#E0101020")
-    private val BG_HEADER   = Color.parseColor("#28FFFFFF")
-    private val BG_ROW_ODD  = Color.parseColor("#14FFFFFF")
-    private val BG_ROW_EVN  = Color.parseColor("#00000000")
-    private val COL_DIVIDER = Color.parseColor("#44FFFFFF")
-    private val COL_POS     = Color.parseColor("#88AABBCC")
-    private val COL_HEADER  = Color.parseColor("#AABBCC")
+    private val BG_DIALOG    = Color.parseColor("#E0101020")
+    private val BG_HEADER    = Color.parseColor("#28FFFFFF")
+    private val BG_ROW_ODD   = Color.parseColor("#14FFFFFF")
+    private val BG_ROW_EVN   = Color.parseColor("#00000000")
+    private val BG_EDITED    = Color.parseColor("#1A00E5A0")
+    private val COL_DIVIDER  = Color.parseColor("#44FFFFFF")
+    private val COL_POS      = Color.parseColor("#88AABBCC")
+    private val COL_HEADER   = Color.parseColor("#AABBCC")
 
     private val isTablet = context.resources.configuration.smallestScreenWidthDp >= 600
 
@@ -53,12 +63,35 @@ class FuseTableDialog(
     private val TEXT_HDR   = if (isTablet) 15f else 11f
     private val TEXT_CLOSE = if (isTablet) 18f else 13f
 
+    private val j2: List<Detection>
+    private val j3: List<Detection>
+    private val editedJ2: Array<String>
+    private val editedJ3: Array<String>
+    private val isEditedJ2 = BooleanArray(9) { false }
+    private val isEditedJ3 = BooleanArray(9) { false }
+
+    private val leftValueViews  = arrayOfNulls<TextView>(9)
+    private val rightValueViews = arrayOfNulls<TextView>(9)
+    private val leftCells       = arrayOfNulls<LinearLayout>(9)
+    private val rightCells      = arrayOfNulls<LinearLayout>(9)
+
+    private var rematchButton: Button? = null
+    private var resultText: TextView? = null
+
+    private val dialogScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    init {
+        val (left, right) = splitColumns(detections)
+        j2 = left
+        j3 = right
+        editedJ2 = Array(9) { i -> j2.getOrNull(i)?.className ?: "empty" }
+        editedJ3 = Array(9) { i -> j3.getOrNull(i)?.className ?: "empty" }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        val (j2, j3) = splitColumns(detections)
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -76,14 +109,41 @@ class FuseTableDialog(
         root.addView(dividerLine())
 
         for (i in 0 until 9) {
-            root.addView(buildDataRow(
-                label1 = "F${i + 1}",
-                value1 = j2.getOrNull(i)?.className ?: "—",
-                label2 = j3Labels[i],
-                value2 = j3.getOrNull(i)?.className ?: "—",
-                shaded = i % 2 == 0
-            ))
+            root.addView(buildDataRow(i, shaded = i % 2 == 0))
         }
+
+        root.addView(dividerLine())
+
+        // OK/NOK result (başlangıçta gizli)
+        val resultTv = TextView(context).apply {
+            visibility = View.GONE
+            gravity = Gravity.CENTER
+            textSize = if (isTablet) 34f else 26f
+            typeface = Typeface.DEFAULT_BOLD
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(if (isTablet) 56 else 44)
+            )
+        }
+        resultText = resultTv
+        root.addView(resultTv)
+
+        // Yeniden Eşleştir butonu (başlangıçta gizli)
+        val rematchBtn = Button(context).apply {
+            text = "↺  Yeniden Eşleştir"
+            visibility = View.GONE
+            textSize = if (isTablet) 15f else 12f
+            setTextColor(Color.parseColor("#00E5A0"))
+            setBackgroundColor(Color.TRANSPARENT)
+            typeface = Typeface.DEFAULT_BOLD
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(if (isTablet) 52 else 40)
+            )
+            setOnClickListener { runRematch() }
+        }
+        rematchButton = rematchBtn
+        root.addView(rematchBtn)
 
         root.addView(dividerLine())
 
@@ -109,6 +169,13 @@ class FuseTableDialog(
         }
     }
 
+    override fun dismiss() {
+        dialogScope.cancel()
+        super.dismiss()
+    }
+
+    // ── Satır inşası ──────────────────────────────────────────────────────────
+
     private fun buildHeaderRow(): LinearLayout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         setBackgroundColor(BG_HEADER)
@@ -123,22 +190,134 @@ class FuseTableDialog(
         addView(headerText("SAĞ (J3) ►", weight = 1f))
     }
 
-    private fun buildDataRow(
-        label1: String, value1: String,
-        label2: String, value2: String,
-        shaded: Boolean
-    ): LinearLayout = LinearLayout(context).apply {
-        orientation = LinearLayout.HORIZONTAL
-        setBackgroundColor(if (shaded) BG_ROW_ODD else BG_ROW_EVN)
-        layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        addView(labelText(label1))
-        addView(valueText(value1, weight = 1f))
-        addView(verticalDivider(ROW_H_DP))
-        addView(labelText(label2))
-        addView(valueText(value2, weight = 1f))
+    private fun buildDataRow(rowIndex: Int, shaded: Boolean): LinearLayout =
+        LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(if (shaded) BG_ROW_ODD else BG_ROW_EVN)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            val leftCell  = buildCellHalf(rowIndex, isLeft = true)
+            val rightCell = buildCellHalf(rowIndex, isLeft = false)
+            leftCells[rowIndex]  = leftCell
+            rightCells[rowIndex] = rightCell
+            addView(leftCell)
+            addView(verticalDivider(ROW_H_DP))
+            addView(rightCell)
+        }
+
+    private fun buildCellHalf(rowIndex: Int, isLeft: Boolean): LinearLayout {
+        val hasOriginal = if (isLeft) j2.size > rowIndex else j3.size > rowIndex
+        val className   = if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
+        val displayText = if (hasOriginal) className else "—"
+        val label       = if (isLeft) "F${rowIndex + 1}" else j3Labels[rowIndex]
+
+        val tv = valueText(displayText, weight = 1f)
+        if (isLeft) leftValueViews[rowIndex]  = tv
+        else        rightValueViews[rowIndex] = tv
+
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(0, dp(ROW_H_DP), 1f)
+            isClickable = true
+            isFocusable = true
+            addView(labelText(label))
+            addView(tv)
+            setOnClickListener { openPicker(rowIndex, isLeft) }
+        }
+    }
+
+    // ── Picker açma ───────────────────────────────────────────────────────────
+
+    private fun openPicker(rowIndex: Int, isLeft: Boolean) {
+        val isEdited = if (isLeft) isEditedJ2[rowIndex] else isEditedJ3[rowIndex]
+        val hasOrig  = if (isLeft) j2.size > rowIndex  else j3.size > rowIndex
+
+        val current = when {
+            isEdited                         -> if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
+            hasOrig                          -> if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
+            else                             -> "empty"
+        }
+
+        FusePickerDialog(context, current) { selected ->
+            if (isLeft) {
+                editedJ2[rowIndex]  = selected
+                isEditedJ2[rowIndex] = true
+                leftValueViews[rowIndex]?.let { refreshValue(it, selected) }
+                leftCells[rowIndex]?.setBackgroundColor(BG_EDITED)
+            } else {
+                editedJ3[rowIndex]  = selected
+                isEditedJ3[rowIndex] = true
+                rightValueViews[rowIndex]?.let { refreshValue(it, selected) }
+                rightCells[rowIndex]?.setBackgroundColor(BG_EDITED)
+            }
+            resultText?.visibility = View.GONE
+            rematchButton?.visibility = View.VISIBLE
+            rematchButton?.isEnabled = true
+            rematchButton?.text = "↺  Yeniden Eşleştir"
+        }.show()
+    }
+
+    // ── Yeniden eşleştirme ────────────────────────────────────────────────────
+
+    private fun runRematch() {
+        rematchButton?.isEnabled = false
+        rematchButton?.text = "Eşleştiriliyor..."
+
+        val editedDetections = buildEditedDetections()
+
+        dialogScope.launch {
+            try {
+                val db = AppDatabase.getInstance(context)
+                val validEntries = withContext(Dispatchers.IO) {
+                    db.combinationDao().getAll()
+                }
+                val matchedId = CombinationChecker.check(editedDetections, validEntries, null)
+
+                resultText?.let { tv ->
+                    tv.visibility = View.VISIBLE
+                    if (matchedId != null) {
+                        tv.text = "OK"
+                        tv.setTextColor(Color.parseColor("#00C853"))
+                    } else {
+                        tv.text = "NOK"
+                        tv.setTextColor(Color.parseColor("#FF1744"))
+                    }
+                }
+                rematchButton?.visibility = View.GONE
+            } catch (e: Exception) {
+                android.util.Log.e("YOLO", "Yeniden eşleştirme hatası: ${e.message}", e)
+                rematchButton?.isEnabled = true
+                rematchButton?.text = "↺  Yeniden Eşleştir"
+            }
+        }
+    }
+
+    private fun buildEditedDetections(): List<Detection> {
+        val result = mutableListOf<Detection>()
+        for (i in 0 until 9) {
+            val className = editedJ2[i]
+            val classId   = YoloDetector.LABELS.indexOf(className).let { if (it < 0) 8 else it }
+            val box       = j2.getOrNull(i)?.box ?: RectF(0.05f, i / 9f, 0.45f, (i + 1) / 9f)
+            result.add(Detection(classId, className, 1f, box))
+        }
+        for (i in 0 until 9) {
+            val className = editedJ3[i]
+            val classId   = YoloDetector.LABELS.indexOf(className).let { if (it < 0) 8 else it }
+            val box       = j3.getOrNull(i)?.box ?: RectF(0.55f, i / 9f, 0.95f, (i + 1) / 9f)
+            result.add(Detection(classId, className, 1f, box))
+        }
+        return result
+    }
+
+    // ── View yardımcıları ─────────────────────────────────────────────────────
+
+    private fun refreshValue(tv: TextView, className: String) {
+        tv.text = className
+        tv.setTextColor(classTextColors[className] ?: Color.parseColor("#AAAACC"))
+        tv.typeface = if (className == "empty") Typeface.defaultFromStyle(Typeface.ITALIC)
+        else Typeface.DEFAULT_BOLD
     }
 
     private fun labelText(text: String) = TextView(context).apply {
@@ -152,9 +331,9 @@ class FuseTableDialog(
 
     private fun valueText(value: String, weight: Float): TextView {
         val isEmpty = value == "—" || value == "empty"
-        val color = when {
-            value == "—" -> Color.parseColor("#445566")
-            else         -> classTextColors[value] ?: Color.parseColor("#AAAACC")
+        val color   = when (value) {
+            "—"  -> Color.parseColor("#445566")
+            else -> classTextColors[value] ?: Color.parseColor("#AAAACC")
         }
         return TextView(context).apply {
             text = value
@@ -196,9 +375,9 @@ class FuseTableDialog(
         if (dets.isEmpty()) return Pair(emptyList(), emptyList())
         val sorted = dets.sortedBy { (it.box.left + it.box.right) / 2f }
         val midX   = sorted.map { (it.box.left + it.box.right) / 2f }.average().toFloat()
-        val left  = sorted.filter { (it.box.left + it.box.right) / 2f < midX }
+        val left   = sorted.filter { (it.box.left + it.box.right) / 2f < midX }
             .sortedBy { (it.box.top + it.box.bottom) / 2f }
-        val right = sorted.filter { (it.box.left + it.box.right) / 2f >= midX }
+        val right  = sorted.filter { (it.box.left + it.box.right) / 2f >= midX }
             .sortedBy { (it.box.top + it.box.bottom) / 2f }
         return Pair(left, right)
     }

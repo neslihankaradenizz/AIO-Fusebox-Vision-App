@@ -27,10 +27,7 @@ class BoxOverlayView @JvmOverloads constructor(
         strokeWidth = 2f
     }
     // FIX 3: döngü dışına alındı, her onDraw'da yeni nesne oluşturulmuyor
-    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        alpha = 30
-    }
+
     private val labelBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
@@ -89,9 +86,6 @@ class BoxOverlayView @JvmOverloads constructor(
             if (right < 0 || left > pvW || bottom < 0 || top > pvH) continue
 
             val rect = RectF(left, top, right, bottom)
-
-            fillPaint.color = color   // FIX 3: sınıf üyesi, sadece rengi değiştiriyoruz
-            canvas.drawRoundRect(rect, 8f, 8f, fillPaint)
 
             boxPaint.color = color
             canvas.drawRoundRect(rect, 8f, 8f, boxPaint)
