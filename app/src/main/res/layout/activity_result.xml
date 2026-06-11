@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="#121212">
 
-    <!-- Fotoğraf -->
     <ImageView
         android:id="@+id/resultImageView"
         android:layout_width="0dp"
@@ -18,7 +17,6 @@
         app:layout_constraintBottom_toTopOf="@id/tvDebug"
         app:layout_constraintVertical_weight="1"/>
 
-    <!-- Kutu overlay -->
     <com.example.yolodetectorapp.BoxOverlayView
         android:id="@+id/resultBoxOverlay"
         android:layout_width="0dp"
@@ -28,13 +26,12 @@
         app:layout_constraintStart_toStartOf="@id/resultImageView"
         app:layout_constraintEnd_toEndOf="@id/resultImageView"/>
 
-    <!-- Debug özeti -->
     <TextView
         android:id="@+id/tvDebug"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:padding="8dp"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_debug"
         android:textColor="#CCCCCC"
         android:gravity="center"
         app:layout_constraintTop_toBottomOf="@id/resultImageView"
@@ -42,12 +39,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/btnMatch"/>
 
-    <!-- OK / NOK yazısı -->
     <TextView
         android:id="@+id/tvResult"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="72sp"
+        android:textSize="@dimen/text_ok_nok"
         android:textStyle="bold"
         android:visibility="gone"
         android:alpha="0.85"
@@ -55,50 +51,48 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Görüntü Eşleştir butonu -->
     <Button
         android:id="@+id/btnMatch"
         android:layout_width="0dp"
-        android:layout_height="56dp"
+        android:layout_height="@dimen/btn_height"
         android:text="Görüntü Eşleştir"
         android:textColor="#FFFFFF"
+        android:textSize="@dimen/btn_text_size"
         android:backgroundTint="#E53935"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginStart="@dimen/btn_margin_side"
+        android:layout_marginEnd="@dimen/btn_margin_side"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@id/btnTable"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Tespit Tablosu butonu  -->
     <Button
         android:id="@+id/btnTable"
         android:layout_width="0dp"
-        android:layout_height="56dp"
+        android:layout_height="@dimen/btn_height"
         android:text="Tespit Tablosu"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="@dimen/btn_text_size"
         android:backgroundTint="#FF2C2C"
         android:visibility="gone"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginStart="@dimen/btn_margin_side"
+        android:layout_marginEnd="@dimen/btn_margin_side"
         android:layout_marginBottom="4dp"
         app:layout_constraintBottom_toTopOf="@id/btnRetake"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Tekrar Çek butonu — başta gizli -->
     <Button
         android:id="@+id/btnRetake"
         android:layout_width="0dp"
-        android:layout_height="56dp"
+        android:layout_height="@dimen/btn_height"
         android:text="Tekrar Fotoğraf Çek"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="@dimen/btn_text_size"
         android:backgroundTint="#FF2C2C"
         android:visibility="gone"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginStart="@dimen/btn_margin_side"
+        android:layout_marginEnd="@dimen/btn_margin_side"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

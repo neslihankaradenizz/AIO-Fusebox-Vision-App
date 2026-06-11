@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 7" tablet ve üzeri (smallestWidth >= 600dp) -->
+<resources>
+    <!-- ROI kutusu -->
+    <dimen name="roi_width">480dp</dimen>
+    <dimen name="roi_height">620dp</dimen>
+
+    <!-- Ana ekran -->
+    <dimen name="text_instruction">22sp</dimen>
+    <dimen name="btn_capture_text">28sp</dimen>
+    <dimen name="btn_capture_height">64dp</dimen>
+
+    <!-- Sonuç ekranı -->
+    <dimen name="text_ok_nok">96sp</dimen>
+    <dimen name="btn_height">68dp</dimen>
+    <dimen name="btn_text_size">20sp</dimen>
+    <dimen name="text_debug">15sp</dimen>
+    <dimen name="btn_margin_side">32dp</dimen>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ROI kutusu -->
+    <dimen name="roi_width">350dp</dimen>
+    <dimen name="roi_height">450dp</dimen>
+
+    <!-- Ana ekran -->
+    <dimen name="text_instruction">20sp</dimen>
+    <dimen name="btn_capture_text">25sp</dimen>
+    <dimen name="btn_capture_height">56dp</dimen>
+
+    <!-- Sonuç ekranı -->
+    <dimen name="text_ok_nok">72sp</dimen>
+    <dimen name="btn_height">56dp</dimen>
+    <dimen name="btn_text_size">18sp</dimen>
+    <dimen name="text_debug">12sp</dimen>
+    <dimen name="btn_margin_side">16dp</dimen>
+</resources>

@@ -28,7 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
                             try {
                                 // assets/combination.json oku
                                 val json = context.assets
-                                    .open("combination.json")
+                                    .open("combinations.json")
                                     .bufferedReader()
                                     .use { it.readText() }
 

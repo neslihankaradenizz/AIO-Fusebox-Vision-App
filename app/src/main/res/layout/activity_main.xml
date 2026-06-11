@@ -11,17 +11,15 @@
         android:layout_height="match_parent"
         app:scaleType="fillCenter"/>
 
-    <!--ROI disi karatma-->
     <com.example.yolodetectorapp.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <!-- ROI KUTUSU -->
     <View
         android:id="@+id/roiView"
-        android:layout_width="350dp"
-        android:layout_height="450dp"
+        android:layout_width="@dimen/roi_width"
+        android:layout_height="@dimen/roi_height"
         android:layout_gravity="center" />
 
     <TextView
@@ -31,19 +29,19 @@
         android:layout_marginTop="32dp"
         android:text="Kamerayı ilgili bölgeye yaklaştırınız"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="@dimen/text_instruction"
         android:background="#88000000"
         android:padding="10dp"/>
 
     <Button
         android:id="@+id/btnCapture"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/btn_capture_height"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="55dp"
         android:backgroundTint="#FF0000"
         android:textColor="#FFFFFF"
         android:text="Fotoğraf Çek"
-        android:textSize="25sp"/>
+        android:textSize="@dimen/btn_capture_text"/>
 
 </FrameLayout>
