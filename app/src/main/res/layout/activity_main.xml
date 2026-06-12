@@ -26,7 +26,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="85dp"
+        android:layout_marginTop="120dp"
         android:text="Kamerayı ilgili bölgeye yaklaştırınız"
         android:textColor="#FFFFFF"
         android:textSize="@dimen/text_instruction"
@@ -47,15 +47,36 @@
         android:contentDescription="Flash"
         android:scaleType="fitCenter"/>
 
-    <Button
-        android:id="@+id/btnCapture"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/btn_capture_height"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="55dp"
-        android:backgroundTint="#FF0000"
-        android:textColor="#FFFFFF"
-        android:text="Fotoğraf Çek"
-        android:textSize="@dimen/btn_capture_text"/>
+    <!-- Zoom bar — butonun hemen üstünde, başlangıçta gizli -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:layout_marginBottom="10dp"
+        android:layout_marginStart="@dimen/btn_margin_side"
+        android:layout_marginEnd="@dimen/btn_margin_side">
+
+        <SeekBar
+            android:id="@+id/zoomSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:max="100"
+            android:progress="0"
+            android:alpha="1.0"
+            android:progressTint="#FFFFFF"
+            android:thumbTint="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/btnCapture"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/btn_height"
+            android:backgroundTint="#FF0000"
+            android:textColor="#FFFFFF"
+            android:text="Fotoğraf Çek"
+            android:textSize="@dimen/btn_text_size"/>
+
+    </LinearLayout>
 
 </FrameLayout>

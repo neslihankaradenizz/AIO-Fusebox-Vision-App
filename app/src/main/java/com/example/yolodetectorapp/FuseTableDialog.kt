@@ -43,14 +43,14 @@ class FuseTableDialog(
 
     private val j3Labels = listOf("F10","F11","F12","F13","F14","F15","F16","F17","TEST")
 
-    private val BG_DIALOG    = Color.parseColor("#E0101020")
-    private val BG_HEADER    = Color.parseColor("#28FFFFFF")
-    private val BG_ROW_ODD   = Color.parseColor("#14FFFFFF")
-    private val BG_ROW_EVN   = Color.parseColor("#00000000")
-    private val BG_EDITED    = Color.parseColor("#1A00E5A0")
-    private val COL_DIVIDER  = Color.parseColor("#44FFFFFF")
-    private val COL_POS      = Color.parseColor("#88AABBCC")
-    private val COL_HEADER   = Color.parseColor("#AABBCC")
+    private val BG_DIALOG   = Color.parseColor("#E0101020")
+    private val BG_HEADER   = Color.parseColor("#28FFFFFF")
+    private val BG_ROW_ODD  = Color.parseColor("#14FFFFFF")
+    private val BG_ROW_EVN  = Color.parseColor("#00000000")
+    private val BG_EDITED   = Color.parseColor("#1A00E5A0")
+    private val COL_DIVIDER = Color.parseColor("#44FFFFFF")
+    private val COL_POS     = Color.parseColor("#88AABBCC")
+    private val COL_HEADER  = Color.parseColor("#AABBCC")
 
     private val isTablet = context.resources.configuration.smallestScreenWidthDp >= 600
 
@@ -99,10 +99,7 @@ class FuseTableDialog(
             background = GradientDrawable().apply {
                 setColor(BG_DIALOG)
                 val r = dp(12).toFloat()
-                cornerRadii = if (isTablet)
-                    floatArrayOf(r,r, r,r, r,r, r,r)
-                else
-                    floatArrayOf(r,r, r,r, 0f,0f, 0f,0f)
+                cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
             }
         }
 
@@ -115,7 +112,6 @@ class FuseTableDialog(
 
         root.addView(dividerLine())
 
-        // OK/NOK result (başlangıçta gizli)
         val resultTv = TextView(context).apply {
             visibility = View.GONE
             gravity = Gravity.CENTER
@@ -129,7 +125,6 @@ class FuseTableDialog(
         resultText = resultTv
         root.addView(resultTv)
 
-        // Yeniden Eşleştir butonu (başlangıçta gizli)
         val rematchBtn = Button(context).apply {
             text = "↺  Yeniden Eşleştir"
             visibility = View.GONE
@@ -162,8 +157,7 @@ class FuseTableDialog(
 
         setContentView(root)
 
-        val dialogWidth = WindowManager.LayoutParams.MATCH_PARENT
-        window?.setLayout(dialogWidth, WindowManager.LayoutParams.WRAP_CONTENT)
+        window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
         window?.attributes = window?.attributes?.also { a ->
             a.gravity = Gravity.BOTTOM
             a.y = 0
@@ -175,8 +169,6 @@ class FuseTableDialog(
         super.dismiss()
     }
 
-    // ── Satır inşası ──────────────────────────────────────────────────────────
-
     private fun buildHeaderRow(): LinearLayout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         setBackgroundColor(BG_HEADER)
@@ -184,11 +176,19 @@ class FuseTableDialog(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        addView(spacer(LABEL_W_DP, HDR_H_DP))
-        addView(headerText("J2", weight = 1f))
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(0, dp(HDR_H_DP), 1f)
+            addView(spacer(LABEL_W_DP, HDR_H_DP))
+            addView(headerText("J2", weight = 1f))
+        })
         addView(verticalDivider(HDR_H_DP))
-        addView(spacer(LABEL_W_DP, HDR_H_DP))
-        addView(headerText("J3", weight = 1f))
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(0, dp(HDR_H_DP), 1f)
+            addView(spacer(LABEL_W_DP, HDR_H_DP))
+            addView(headerText("J3", weight = 1f))
+        })
     }
 
     private fun buildDataRow(rowIndex: Int, shaded: Boolean): LinearLayout =
@@ -229,26 +229,17 @@ class FuseTableDialog(
         }
     }
 
-    // ── Picker açma ───────────────────────────────────────────────────────────
-
     private fun openPicker(rowIndex: Int, isLeft: Boolean) {
-        val isEdited = if (isLeft) isEditedJ2[rowIndex] else isEditedJ3[rowIndex]
-        val hasOrig  = if (isLeft) j2.size > rowIndex  else j3.size > rowIndex
-
-        val current = when {
-            isEdited                         -> if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
-            hasOrig                          -> if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
-            else                             -> "empty"
-        }
+        val current = if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
 
         FusePickerDialog(context, current) { selected ->
             if (isLeft) {
-                editedJ2[rowIndex]  = selected
+                editedJ2[rowIndex]   = selected
                 isEditedJ2[rowIndex] = true
                 leftValueViews[rowIndex]?.let { refreshValue(it, selected) }
                 leftCells[rowIndex]?.setBackgroundColor(BG_EDITED)
             } else {
-                editedJ3[rowIndex]  = selected
+                editedJ3[rowIndex]   = selected
                 isEditedJ3[rowIndex] = true
                 rightValueViews[rowIndex]?.let { refreshValue(it, selected) }
                 rightCells[rowIndex]?.setBackgroundColor(BG_EDITED)
@@ -259,8 +250,6 @@ class FuseTableDialog(
             rematchButton?.text = "↺  Yeniden Eşleştir"
         }.show()
     }
-
-    // ── Yeniden eşleştirme ────────────────────────────────────────────────────
 
     private fun runRematch() {
         rematchButton?.isEnabled = false
@@ -289,7 +278,6 @@ class FuseTableDialog(
                 }
                 onRematchResult?.invoke(matched)
                 rematchButton?.visibility = View.GONE
-
             } catch (e: Exception) {
                 android.util.Log.e("YOLO", "Yeniden eşleştirme hatası: ${e.message}", e)
                 rematchButton?.isEnabled = true
@@ -315,8 +303,6 @@ class FuseTableDialog(
         return result
     }
 
-    // ── View yardımcıları ─────────────────────────────────────────────────────
-
     private fun refreshValue(tv: TextView, className: String) {
         tv.text = className
         tv.setTextColor(classTextColors[className] ?: Color.parseColor("#AAAACC"))
@@ -335,7 +321,7 @@ class FuseTableDialog(
 
     private fun valueText(value: String, weight: Float): TextView {
         val isEmpty = value == "—" || value == "empty"
-        val color   = when (value) {
+        val color = when (value) {
             "—"  -> Color.parseColor("#445566")
             else -> classTextColors[value] ?: Color.parseColor("#AAAACC")
         }
@@ -350,7 +336,7 @@ class FuseTableDialog(
         }
     }
 
-    private fun headerText(text: String, weight: Float) = TextView(context).apply {
+    private fun headerText(text: String, weight: Float = 1f) = TextView(context).apply {
         this.text = text
         setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_HDR)
         typeface = Typeface.DEFAULT_BOLD
@@ -361,9 +347,7 @@ class FuseTableDialog(
 
     private fun dividerLine() = View(context).apply {
         setBackgroundColor(COL_DIVIDER)
-        layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(1)
-        )
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
     }
 
     private fun verticalDivider(heightDp: Int) = View(context).apply {

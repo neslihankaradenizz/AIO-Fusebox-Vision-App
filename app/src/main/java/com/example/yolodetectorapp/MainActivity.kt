@@ -18,10 +18,19 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
-
+import androidx.camera.core.Camera
+import android.view.ScaleGestureDetector
+import android.widget.SeekBar
 class MainActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
+
+    private var camera: Camera? = null
+    private lateinit var zoomSeekBar: SeekBar
+
+    private val hideZoomBarRunnable = Runnable {
+        zoomSeekBar.animate().alpha(0f).setDuration(500).start()
+    }
     private lateinit var overlayView: OverlayView
     private lateinit var roiView: android.view.View
     private lateinit var btnCapture: Button
@@ -35,6 +44,21 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         previewView = findViewById(R.id.previewView)
+        zoomSeekBar = findViewById(R.id.zoomSeekBar)
+        zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                val zoomState = camera?.cameraInfo?.zoomState?.value ?: return
+                val zoom = zoomState.minZoomRatio +
+                        (zoomState.maxZoomRatio - zoomState.minZoomRatio) * (progress / 100f)
+                camera?.cameraControl?.setZoomRatio(zoom)
+                showZoomBar()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                scheduleHideZoomBar()
+            }
+        })
         overlayView = findViewById(R.id.overlayView)
         roiView     = findViewById(R.id.roiView)
         btnCapture  = findViewById(R.id.btnCapture)
@@ -153,12 +177,13 @@ class MainActivity : AppCompatActivity() {
                 .build()
 
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
+            camera = cameraProvider.bindToLifecycle(
                 this,
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 preview,
                 imageCapture
             )
+            setupPinchToZoom()
 
             roiView.post {
                 val roiLoc     = IntArray(2)
@@ -175,6 +200,40 @@ class MainActivity : AppCompatActivity() {
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun setupPinchToZoom() {
+        val scaleGestureDetector = ScaleGestureDetector(this,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    val zoomState = camera?.cameraInfo?.zoomState?.value ?: return true
+                    val currentZoom = zoomState.zoomRatio
+                    val newZoom = (currentZoom * detector.scaleFactor)
+                        .coerceIn(zoomState.minZoomRatio, zoomState.maxZoomRatio)
+                    camera?.cameraControl?.setZoomRatio(newZoom)
+                    val progress = ((newZoom - zoomState.minZoomRatio) /
+                            (zoomState.maxZoomRatio - zoomState.minZoomRatio) * 100).toInt()
+                    zoomSeekBar.progress = progress
+                    return true
+                }
+            }
+        )
+
+        previewView.setOnTouchListener { view, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            view.performClick()
+            true
+        }
+    }
+
+    private fun showZoomBar() {
+        zoomSeekBar.removeCallbacks(hideZoomBarRunnable)
+        zoomSeekBar.animate().alpha(1f).setDuration(200).start()
+    }
+
+    private fun scheduleHideZoomBar() {
+        zoomSeekBar.removeCallbacks(hideZoomBarRunnable)
+        zoomSeekBar.postDelayed(hideZoomBarRunnable, 2000)
     }
 
     override fun onRequestPermissionsResult(
