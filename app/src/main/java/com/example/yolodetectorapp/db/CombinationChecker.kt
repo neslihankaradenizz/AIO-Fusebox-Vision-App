@@ -27,7 +27,11 @@ object CombinationChecker {
         val splitIdx  = findColumnSplit(sortedByX)
         val leftCol   = sortedByX.take(splitIdx).sortedBy { (it.box.top + it.box.bottom) / 2f }
         val rightCol  = sortedByX.drop(splitIdx).sortedBy { (it.box.top + it.box.bottom) / 2f }
-        val detectedIds = (leftCol + rightCol).map { it.classId }
+        val rawIds = (leftCol + rightCol).map { it.classId }
+        val detectedIds = if (rawIds.size < 18)
+            rawIds + List(18 - rawIds.size) { 8 }
+        else
+            rawIds.take(18)
 
         val entriesToCheck = if (combinationId != null)
             validEntries.filter { it.combinationId == combinationId }

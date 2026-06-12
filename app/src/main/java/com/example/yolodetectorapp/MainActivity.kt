@@ -21,6 +21,7 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.core.Camera
 import android.view.ScaleGestureDetector
 import android.widget.SeekBar
+import android.widget.TextView
 class MainActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
@@ -86,6 +87,17 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        val tvOrientationWarning = findViewById<TextView>(R.id.tvOrientationWarning)
+        val orientationListener = object : android.view.OrientationEventListener(this@MainActivity) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                val isLandscape = orientation in 45..135 || orientation in 225..315
+                tvOrientationWarning.visibility = if (isLandscape) android.view.View.VISIBLE else android.view.View.GONE
+                btnCapture.isEnabled = !isLandscape
+            }
+        }
+
+        orientationListener.enable()
         btnCapture.setOnClickListener {
             imageCapture.takePicture(
                 ContextCompat.getMainExecutor(this),
