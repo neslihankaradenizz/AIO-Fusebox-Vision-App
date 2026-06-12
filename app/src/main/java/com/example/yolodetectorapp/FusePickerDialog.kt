@@ -26,15 +26,15 @@ class FusePickerDialog(
     )
 
     private val fuseOptions = listOf(
-        FuseOption("2_amp",   "#0DAD7A", "2A",    getDrawableId("ic_fuse_2amp")),
-        FuseOption("3_amp",   "#3DAD3A", "3A",    getDrawableId("ic_fuse_3amp")),
-        FuseOption("5_amp",   "#7B4FD6", "5A",    getDrawableId("ic_fuse_5amp")),
-        FuseOption("7.5_amp", "#D46320", "7.5A",  getDrawableId("ic_fuse_7_5amp")),
-        FuseOption("10_amp",  "#E8453C", "10A",   getDrawableId("ic_fuse_10amp")),
-        FuseOption("15_amp",  "#E07B20", "15A",   getDrawableId("ic_fuse_15amp")),
-        FuseOption("20_amp",  "#C9970A", "20A",   getDrawableId("ic_fuse_20amp")),
-        FuseOption("25_amp",  "#0FA8CC", "25A",   getDrawableId("ic_fuse_25amp")),
-        FuseOption("30_amp",  "#2E7DD6", "30A",   getDrawableId("ic_fuse_30amp")),
+        FuseOption("2_amp",   "#AAAAAA", "2A",    getDrawableId("ic_fuse_2amp")),
+        FuseOption("3_amp",   "#FF80AB", "3A",    getDrawableId("ic_fuse_3amp")),
+        FuseOption("5_amp",   "#C4A882", "5A",    getDrawableId("ic_fuse_5amp")),
+        FuseOption("7.5_amp", "#8B5E3C", "7.5A",  getDrawableId("ic_fuse_7_5amp")),
+        FuseOption("10_amp",  "#FF3B30", "10A",   getDrawableId("ic_fuse_10amp")),
+        FuseOption("15_amp",  "#2979FF", "15A",   getDrawableId("ic_fuse_15amp")),
+        FuseOption("20_amp",  "#FFD600", "20A",   getDrawableId("ic_fuse_20amp")),
+        FuseOption("25_amp",  "#E0E0E0", "25A",   getDrawableId("ic_fuse_25amp")),
+        FuseOption("30_amp",  "#00C853", "30A",   getDrawableId("ic_fuse_30amp")),
         FuseOption("empty",   "#666680", "Boş",   getDrawableId("ic_fuse_empty"))
     )
 
@@ -59,7 +59,7 @@ class FusePickerDialog(
 
         // Başlık
         root.addView(TextView(context).apply {
-            text = "Sigorta Türü Seç"
+            text = "Sigorta Türü Seçiniz"
             setTextColor(Color.parseColor("#AABBDD"))
             textSize = if (isTablet) 15f else 12f
             typeface = Typeface.DEFAULT_BOLD
@@ -85,12 +85,13 @@ class FusePickerDialog(
             ).apply { topMargin = dp(8); bottomMargin = dp(8) }
         }
 
-        fuseOptions.forEach { option ->
+        fuseOptions.forEachIndexed { index, option ->
             val isSelected = option.className == currentValue
             val card = buildCard(option, isSelected)
+            val isLast = index == fuseOptions.size - 1
             card.layoutParams = GridLayout.LayoutParams().apply {
                 width = 0
-                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                columnSpec = if (isLast) GridLayout.spec(1, 1, 1f) else GridLayout.spec(GridLayout.UNDEFINED, 1f)
                 setMargins(dp(4), dp(4), dp(4), dp(4))
             }
             card.setOnClickListener { onSelected(option.className); dismiss() }

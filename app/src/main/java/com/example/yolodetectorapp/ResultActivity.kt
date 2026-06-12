@@ -70,15 +70,11 @@ class ResultActivity : AppCompatActivity() {
             }
 
             if (detections.isEmpty()) {
-                tvDebug.text = "⚠️ Hiç tespit yok!"
-                tvDebug.setTextColor("#FF1744".toColorInt())
+                tvDebug.text = "Tespit edilen sigorta sayısı: 0"
+                tvDebug.setTextColor("#CCCCCC".toColorInt())
             } else {
-                val summary = detections
-                    .groupBy { it.className }
-                    .map { (cls, list) -> "${cls}×${list.size}" }
-                    .joinToString("  ")
-                tvDebug.text = "✅ ${detections.size} tespit: $summary"
-                tvDebug.setTextColor("#00C853".toColorInt())
+                tvDebug.text = "Tespit edilen sigorta sayısı: ${detections.size}"
+                tvDebug.setTextColor("#CCCCCC".toColorInt())
             }
 
             btnMatch.isEnabled = true
@@ -122,7 +118,15 @@ class ResultActivity : AppCompatActivity() {
         }
 
         btnTable.setOnClickListener {
-            FuseTableDialog(this, pendingDetections).show()
+            FuseTableDialog(this, pendingDetections) { matched ->
+                if (matched) {
+                    tvResult.text = "OK"
+                    tvResult.setTextColor("#00C853".toColorInt())
+                } else {
+                    tvResult.text = "NOK"
+                    tvResult.setTextColor("#FF1744".toColorInt())
+                }
+            }.show()
         }
     }
 }

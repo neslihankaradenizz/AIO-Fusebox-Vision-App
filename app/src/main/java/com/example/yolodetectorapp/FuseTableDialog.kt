@@ -24,19 +24,20 @@ import kotlinx.coroutines.withContext
 
 class FuseTableDialog(
     context: Context,
-    private val detections: List<Detection>
+    private val detections: List<Detection>,
+    private val onRematchResult: ((matched: Boolean) -> Unit)? = null
 ) : Dialog(context) {
 
     private val classTextColors = mapOf(
-        "10_amp"  to Color.parseColor("#E8453C"),
-        "15_amp"  to Color.parseColor("#E07B20"),
-        "20_amp"  to Color.parseColor("#C9970A"),
-        "25_amp"  to Color.parseColor("#0FA8CC"),
-        "2_amp"   to Color.parseColor("#0DAD7A"),
-        "30_amp"  to Color.parseColor("#2E7DD6"),
-        "3_amp"   to Color.parseColor("#3DAD3A"),
-        "5_amp"   to Color.parseColor("#7B4FD6"),
-        "7.5_amp" to Color.parseColor("#D46320"),
+        "2_amp"   to Color.parseColor("#AAAAAA"),
+        "3_amp"   to Color.parseColor("#FF80AB"),
+        "5_amp"   to Color.parseColor("#C4A882"),
+        "7.5_amp" to Color.parseColor("#8B5E3C"),
+        "10_amp"  to Color.parseColor("#FF3B30"),
+        "15_amp"  to Color.parseColor("#2979FF"),
+        "20_amp"  to Color.parseColor("#FFD600"),
+        "25_amp"  to Color.parseColor("#E0E0E0"),
+        "30_amp"  to Color.parseColor("#00C853"),
         "empty"   to Color.parseColor("#666680")
     )
 
@@ -161,10 +162,10 @@ class FuseTableDialog(
 
         setContentView(root)
 
-        val dialogWidth = if (isTablet) dp(640) else WindowManager.LayoutParams.MATCH_PARENT
+        val dialogWidth = WindowManager.LayoutParams.MATCH_PARENT
         window?.setLayout(dialogWidth, WindowManager.LayoutParams.WRAP_CONTENT)
         window?.attributes = window?.attributes?.also { a ->
-            a.gravity = if (isTablet) Gravity.CENTER else Gravity.BOTTOM
+            a.gravity = Gravity.BOTTOM
             a.y = 0
         }
     }
@@ -184,10 +185,10 @@ class FuseTableDialog(
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
         addView(spacer(LABEL_W_DP, HDR_H_DP))
-        addView(headerText("◄ SOL (J2)", weight = 1f))
+        addView(headerText("J2", weight = 1f))
         addView(verticalDivider(HDR_H_DP))
         addView(spacer(LABEL_W_DP, HDR_H_DP))
-        addView(headerText("SAĞ (J3) ►", weight = 1f))
+        addView(headerText("J3", weight = 1f))
     }
 
     private fun buildDataRow(rowIndex: Int, shaded: Boolean): LinearLayout =
@@ -275,9 +276,10 @@ class FuseTableDialog(
                 }
                 val matchedId = CombinationChecker.check(editedDetections, validEntries, null)
 
+                val matched = matchedId != null
                 resultText?.let { tv ->
                     tv.visibility = View.VISIBLE
-                    if (matchedId != null) {
+                    if (matched) {
                         tv.text = "OK"
                         tv.setTextColor(Color.parseColor("#00C853"))
                     } else {
@@ -285,7 +287,9 @@ class FuseTableDialog(
                         tv.setTextColor(Color.parseColor("#FF1744"))
                     }
                 }
+                onRematchResult?.invoke(matched)
                 rematchButton?.visibility = View.GONE
+
             } catch (e: Exception) {
                 android.util.Log.e("YOLO", "Yeniden eşleştirme hatası: ${e.message}", e)
                 rematchButton?.isEnabled = true
