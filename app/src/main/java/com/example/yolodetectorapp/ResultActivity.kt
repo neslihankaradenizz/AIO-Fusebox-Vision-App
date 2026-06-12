@@ -59,9 +59,7 @@ class ResultActivity : AppCompatActivity() {
             // FIX 1: Detector kullandıktan sonra kapatılıyor
             val detections = withContext(Dispatchers.Default) {
                 val detector = YoloDetector(this@ResultActivity)
-                val result = detector.detect(bmp)
-                detector.close()
-                result
+                detector.detect(bmp)
             }
 
             pendingDetections = detections

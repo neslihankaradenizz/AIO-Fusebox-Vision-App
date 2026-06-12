@@ -27,7 +27,6 @@ class YoloDetector(context: Context) {
         private const val IOU_THRESH   = 0.45f
         private const val NUM_CLASSES  = 10 //sinif sayisi
         private const val NUM_DETS     = 21504
-
         val LABELS = listOf(
             "10_amp",   // 0
             "15_amp",   // 1
@@ -40,6 +39,16 @@ class YoloDetector(context: Context) {
             "7.5_amp",  // 8
             "empty"     // 9
         )
+
+        @Volatile
+        private var instance: YoloDetector? = null
+
+        fun getInstance(context: Context): YoloDetector {
+            return instance ?: synchronized(this) {
+                instance ?: YoloDetector(context.applicationContext).also { instance = it }
+            }
+        }
+
     }
 
     private val interpreter: Interpreter

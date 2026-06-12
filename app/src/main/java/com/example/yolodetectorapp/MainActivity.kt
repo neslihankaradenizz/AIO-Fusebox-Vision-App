@@ -99,6 +99,7 @@ class MainActivity : AppCompatActivity() {
 
         orientationListener.enable()
         btnCapture.setOnClickListener {
+            btnCapture.isEnabled = false
             imageCapture.takePicture(
                 ContextCompat.getMainExecutor(this),
                 object : ImageCapture.OnImageCapturedCallback() {
@@ -122,7 +123,10 @@ class MainActivity : AppCompatActivity() {
                         startActivity(Intent(this@MainActivity, ResultActivity::class.java))
                     }
 
+
+
                     override fun onError(exception: ImageCaptureException) {
+                        btnCapture.isEnabled = true
                         Toast.makeText(
                             this@MainActivity,
                             "Hata: ${exception.message}",
@@ -246,6 +250,14 @@ class MainActivity : AppCompatActivity() {
     private fun scheduleHideZoomBar() {
         zoomSeekBar.removeCallbacks(hideZoomBarRunnable)
         zoomSeekBar.postDelayed(hideZoomBarRunnable, 2000)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        btnCapture.isEnabled = true
+        ResultActivity.pendingBitmap?.recycle()
+        ResultActivity.pendingBitmap = null
+        ResultActivity.pendingDetections = emptyList()
     }
 
     override fun onRequestPermissionsResult(

@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="120dp"
-        android:text="Kamerayı ilgili bölgeye yaklaştırınız"
+        android:text="Sigorta kutusunu ilgili bölgeye yaklaştırınız"
         android:textColor="#FFFFFF"
         android:textSize="@dimen/text_instruction"
         android:background="#88000000"
