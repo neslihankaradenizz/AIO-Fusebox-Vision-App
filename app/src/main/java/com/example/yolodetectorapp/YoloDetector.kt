@@ -49,6 +49,11 @@ class YoloDetector(context: Context) {
             }
         }
 
+        fun releaseInstance() {
+            instance?.interpreter?.close()
+            instance = null
+        }
+
     }
 
     private val interpreter: Interpreter
