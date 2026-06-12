@@ -21,6 +21,9 @@ class ResultActivity : AppCompatActivity() {
         var pendingDetections: List<Detection> = emptyList()
     }
 
+    private var lastExpectedCombinationId: String? = null
+    private var lastExpectedClassIds: List<Int> = emptyList()
+
     override fun onDestroy() {
         super.onDestroy()
         pendingBitmap?.recycle()
@@ -42,6 +45,7 @@ class ResultActivity : AppCompatActivity() {
         val btnMatch   = findViewById<Button>(R.id.btnMatch)
         val btnTable   = findViewById<Button>(R.id.btnTable)
         val btnRetake  = findViewById<Button>(R.id.btnRetake)
+
 
         imageView.setImageBitmap(bmp)
         tvDebug.text = "🔍 Analiz ediliyor..."
@@ -91,9 +95,13 @@ class ResultActivity : AppCompatActivity() {
                         db.combinationDao().getAll()
                     }
 
-                    val matchedId = CombinationChecker.check(
+                    val result = CombinationChecker.checkWithExpected(
                         pendingDetections, validEntries, combinationId = null
                     )
+
+                    val matchedId = result.matchedId
+                    lastExpectedClassIds = result.expectedClassIds
+                    lastExpectedCombinationId = result.expectedCombinationId
 
                     tvResult.visibility = View.VISIBLE
                     tvResult.bringToFront()
@@ -118,7 +126,7 @@ class ResultActivity : AppCompatActivity() {
         }
 
         btnTable.setOnClickListener {
-            FuseTableDialog(this, pendingDetections) { matched ->
+            FuseTableDialog(this, pendingDetections, lastExpectedClassIds, lastExpectedCombinationId) { matched ->
                 if (matched) {
                     tvResult.text = "OK"
                     tvResult.setTextColor("#00C853".toColorInt())

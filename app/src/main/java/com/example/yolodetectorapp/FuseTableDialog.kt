@@ -25,6 +25,8 @@ import kotlinx.coroutines.withContext
 class FuseTableDialog(
     context: Context,
     private val detections: List<Detection>,
+    private val expectedClassIds: List<Int> = emptyList(),
+    private val expectedCombinationId: String? = null,
     private val onRematchResult: ((matched: Boolean) -> Unit)? = null
 ) : Dialog(context) {
 
@@ -101,6 +103,20 @@ class FuseTableDialog(
                 val r = dp(12).toFloat()
                 cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
             }
+        }
+        if (expectedCombinationId != null) {
+            root.addView(TextView(context).apply {
+                text = "Olması gereken dizilim türü: $expectedCombinationId"
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, if (isTablet) 13f else 10f)
+                setTextColor(Color.parseColor("#AABBCC"))
+                gravity = Gravity.CENTER
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            })
+            root.addView(dividerLine())
         }
 
         root.addView(buildHeaderRow())
@@ -180,14 +196,16 @@ class FuseTableDialog(
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(0, dp(HDR_H_DP), 1f)
             addView(spacer(LABEL_W_DP, HDR_H_DP))
-            addView(headerText("J2", weight = 1f))
+            addView(headerText("Tespit", weight = 1f))
+            addView(headerText("Gereken", weight = 1f))
         })
         addView(verticalDivider(HDR_H_DP))
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(0, dp(HDR_H_DP), 1f)
             addView(spacer(LABEL_W_DP, HDR_H_DP))
-            addView(headerText("J3", weight = 1f))
+            addView(headerText("Tespit", weight = 1f))
+            addView(headerText("Gereken", weight = 1f))
         })
     }
 
@@ -214,19 +232,40 @@ class FuseTableDialog(
         val displayText = if (hasOriginal) className else "—"
         val label       = if (isLeft) "F${rowIndex + 1}" else j3Labels[rowIndex]
 
+        val expectedIndex = if (isLeft) rowIndex else rowIndex + 9
+        val expectedClassId = expectedClassIds.getOrNull(expectedIndex)
+        val expectedName = expectedClassId?.let { id ->
+            YoloDetector.LABELS.getOrNull(id) ?: "—"
+        } ?: "—"
+
         val tv = valueText(displayText, weight = 1f)
         if (isLeft) leftValueViews[rowIndex]  = tv
         else        rightValueViews[rowIndex] = tv
+
+        val expectedTv = expectedValueText(expectedName, detectedName = displayText, weight = 1f)
 
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(0, dp(ROW_H_DP), 1f)
             isClickable = true
             isFocusable = true
+            if (isMismatch(rowIndex, isLeft)) {
+                setBackgroundColor(Color.parseColor("#33FF6B00"))
+            }
             addView(labelText(label))
             addView(tv)
+            addView(expectedTv)
             setOnClickListener { openPicker(rowIndex, isLeft) }
         }
+    }
+
+    private fun isMismatch(rowIndex: Int, isLeft: Boolean): Boolean {
+        val expectedIndex = if (isLeft) rowIndex else rowIndex + 9
+        val expectedClassId = expectedClassIds.getOrNull(expectedIndex) ?: return false
+        val expectedName = YoloDetector.LABELS.getOrNull(expectedClassId) ?: return false
+        val detectedName = if (isLeft) editedJ2[rowIndex] else editedJ3[rowIndex]
+        val hasOriginal = if (isLeft) j2.size > rowIndex else j3.size > rowIndex
+        return hasOriginal && detectedName != expectedName
     }
 
     private fun openPicker(rowIndex: Int, isLeft: Boolean) {
@@ -330,6 +369,23 @@ class FuseTableDialog(
             setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_VALUE)
             typeface = if (isEmpty) Typeface.defaultFromStyle(Typeface.ITALIC)
             else Typeface.DEFAULT_BOLD
+            setTextColor(color)
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(0, dp(ROW_H_DP), weight)
+        }
+    }
+
+    private fun expectedValueText(expected: String, detectedName: String, weight: Float): TextView {
+        val mismatch = expected != "—" && expected != detectedName
+        val color = when {
+            expected == "—" -> Color.parseColor("#445566")
+            mismatch        -> classTextColors[expected] ?: Color.parseColor("#AAAACC")
+            else            -> Color.parseColor("#445566")
+        }
+        return TextView(context).apply {
+            text = if (expected == "—") "—" else expected
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_VALUE)
+            typeface = if (mismatch) Typeface.DEFAULT_BOLD else Typeface.defaultFromStyle(Typeface.ITALIC)
             setTextColor(color)
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(0, dp(ROW_H_DP), weight)
