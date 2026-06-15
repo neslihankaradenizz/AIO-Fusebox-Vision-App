@@ -68,12 +68,13 @@ class MainActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             selectedFuseboxId = result.data?.getStringExtra(FuseboxSelectionActivity.RESULT_FUSEBOX_ID)
-            tvSelectedFusebox.text = "Seçilen Fusebox: $selectedFuseboxId"
+            val vehicleName = VEHICLE_LIST[selectedVehiclePosition]
+            tvSelectedFusebox.text = "$vehicleName › Fusebox $selectedFuseboxId"
             tvSelectedFusebox.visibility = View.VISIBLE
         }
-        // Araç adını geri yükle (OK veya iptal fark etmez)
+        // Spinner'ı sıfırla — böylece aynı araç tekrar seçilebilir
         spinnerReady = false
-        vehicleSpinner.setSelection(selectedVehiclePosition, false)
+        vehicleSpinner.setSelection(0, false)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,11 +148,6 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        vehicleSpinner.setOnTouchListener { _, _ ->
-            spinnerReady = false
-            vehicleSpinner.setSelection(0, false)
-            false
-        }
         zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (!fromUser) return
@@ -193,7 +189,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnCapture.setOnClickListener {
-            if (vehicleSpinner.selectedItemPosition == 0) {
+            if (selectedVehiclePosition == 0) {
                 Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -202,7 +198,7 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             btnCapture.isEnabled = false
-            val selectedVehicle = VEHICLE_LIST[vehicleSpinner.selectedItemPosition]
+            val selectedVehicle = VEHICLE_LIST[selectedVehiclePosition]
             val roi = calcNormalizedRoi()
             imageCapture.takePicture(
                 captureExecutor,
@@ -262,10 +258,11 @@ class MainActivity : AppCompatActivity() {
 
         if (shouldResetOnResume) {
             shouldResetOnResume = false
-            spinnerReady = false
-            vehicleSpinner.setSelection(0)
+            selectedVehiclePosition = 0
             selectedFuseboxId = null
             tvSelectedFusebox.visibility = View.GONE
+            vehicleSpinner.setSelection(0)
+            spinnerReady = true
             ResultActivity.pendingBitmap?.recycle()
             ResultActivity.pendingBitmap = null
             ResultActivity.pendingDetections = emptyList()
