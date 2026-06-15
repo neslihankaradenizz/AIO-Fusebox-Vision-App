@@ -22,7 +22,7 @@
         android:layout_height="@dimen/roi_height"
         android:layout_gravity="center" />
 
-    <!-- Araç seçimi — EN ÜSTTE -->
+    <!-- Araç seçimi EN ÜSTTE -->
     <Spinner
         android:id="@+id/vehicleSpinner"
         android:layout_width="match_parent"
@@ -55,7 +55,6 @@
         android:padding="10dp"
         android:visibility="gone"/>
 
-    <!-- Flash toggle — sağ üst köşe, spinner'ın altında -->
     <ImageButton
         android:id="@+id/btnFlash"
         android:layout_width="52dp"
@@ -69,7 +68,6 @@
         android:contentDescription="Flash"
         android:scaleType="fitCenter"/>
 
-    <!-- Alt kontroller -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -79,25 +77,7 @@
         android:layout_marginStart="@dimen/btn_margin_side"
         android:layout_marginEnd="@dimen/btn_margin_side">
 
-        <!-- Parlaklık toggle butonu -->
-        <TextView
-            android:id="@+id/btnBrightnessToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="☀"
-            android:textSize="22sp"
-            android:textColor="#FFFFFF"
-            android:background="#66000000"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:layout_marginBottom="4dp"
-            android:alpha="0.6"
-            android:clickable="true"
-            android:focusable="true"/>
-
-        <!-- Parlaklık satırı — ikon her zaman görünür, seekbar toggle ile açılır -->
+        <!-- Parlaklık: tek ikon solda, seekbar sağda, ikona basınca seekbar açılır -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -110,9 +90,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="☀"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textColor="#FFFFFF"
-                android:paddingEnd="8dp"
+                android:alpha="0.5"
+                android:layout_marginEnd="8dp"
                 android:clickable="true"
                 android:focusable="true"/>
 
@@ -123,12 +104,13 @@
                 android:layout_weight="1"
                 android:max="100"
                 android:progress="50"
-                android:visibility="gone"
                 android:progressTint="#FFFFFF"
-                android:thumbTint="#FFFFFF"/>
+                android:thumbTint="#FFFFFF"
+                android:visibility="gone"/>
+
         </LinearLayout>
 
-        <!-- Zoom satırı -->
+        <!-- Zoom: ikon solda, seekbar sağda, her zaman görünür -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -140,8 +122,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🔍"
-                android:textSize="20sp"
-                android:paddingEnd="8dp"/>
+                android:textSize="18sp"
+                android:layout_marginEnd="8dp"/>
 
             <SeekBar
                 android:id="@+id/zoomSeekBar"
@@ -152,8 +134,9 @@
                 android:progress="0"
                 android:progressTint="#FFFFFF"
                 android:thumbTint="#FFFFFF"/>
+
         </LinearLayout>
-        <!-- Fotoğraf çekme butonu -->
+
         <Button
             android:id="@+id/btnCapture"
             android:layout_width="match_parent"

@@ -1,7 +1,6 @@
 package com.example.yolodetectorapp
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -53,50 +52,41 @@ class MainActivity : AppCompatActivity() {
     companion object {
         val VEHICLE_LIST = listOf("Araç Seçiniz", "Novociti Life", "Novociti")
         const val EXTRA_VEHICLE_NAME = "vehicle_name"
-        private const val PREFS_NAME = "app_prefs"
-        private const val PREF_BRIGHTNESS = "brightness"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        previewView           = findViewById(R.id.previewView)
-        overlayView           = findViewById(R.id.overlayView)
-        roiView               = findViewById(R.id.roiView)
-        btnCapture            = findViewById(R.id.btnCapture)
-        btnFlash              = findViewById(R.id.btnFlash)
-        zoomSeekBar           = findViewById(R.id.zoomSeekBar)
-        brightnessSeekBar     = findViewById(R.id.brightnessSeekBar)
-        btnBrightnessToggle   = findViewById(R.id.btnBrightnessToggle)
-        tvOrientationWarning  = findViewById(R.id.tvOrientationWarning)
-        vehicleSpinner        = findViewById(R.id.vehicleSpinner)
+        previewView          = findViewById(R.id.previewView)
+        overlayView          = findViewById(R.id.overlayView)
+        roiView              = findViewById(R.id.roiView)
+        btnCapture           = findViewById(R.id.btnCapture)
+        btnFlash             = findViewById(R.id.btnFlash)
+        zoomSeekBar          = findViewById(R.id.zoomSeekBar)
+        brightnessSeekBar    = findViewById(R.id.brightnessSeekBar)
+        btnBrightnessToggle  = findViewById(R.id.btnBrightnessToggle)
+        tvOrientationWarning = findViewById(R.id.tvOrientationWarning)
+        vehicleSpinner       = findViewById(R.id.vehicleSpinner)
 
-        // Kaydedilmiş parlaklık değerini yükle
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val savedBrightness = prefs.getInt(PREF_BRIGHTNESS, 50)
-        brightnessSeekBar.progress = savedBrightness
-        applyBrightness(savedBrightness)
+        brightnessSeekBar.progress = 50
+        applyBrightness(50)
 
-        // Parlaklık toggle
         btnBrightnessToggle.setOnClickListener {
             brightnessVisible = !brightnessVisible
             brightnessSeekBar.visibility = if (brightnessVisible) View.VISIBLE else View.GONE
             btnBrightnessToggle.alpha = if (brightnessVisible) 1f else 0.5f
         }
 
-        // Parlaklık seekbar
         brightnessSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (!fromUser) return
                 applyBrightness(progress)
-                prefs.edit().putInt(PREF_BRIGHTNESS, progress).apply()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar) {}
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
 
-        // Zoom seekbar
         zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (!fromUser) return
@@ -109,7 +99,6 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
 
-        // Flash
         btnFlash.setOnClickListener {
             flashEnabled = !flashEnabled
             btnFlash.setImageResource(
@@ -121,7 +110,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Spinner
         val spinnerAdapter = object : ArrayAdapter<String>(
             this, android.R.layout.simple_spinner_item, VEHICLE_LIST
         ) {
@@ -142,7 +130,6 @@ class MainActivity : AppCompatActivity() {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         vehicleSpinner.adapter = spinnerAdapter
 
-        // Orientation uyarısı
         orientationListener = object : android.view.OrientationEventListener(this@MainActivity) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
@@ -153,7 +140,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Kamera izni
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) {
             startCamera()
@@ -161,7 +147,6 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
         }
 
-        // Fotoğraf çek
         btnCapture.setOnClickListener {
             if (vehicleSpinner.selectedItemPosition == 0) {
                 Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
@@ -222,6 +207,8 @@ class MainActivity : AppCompatActivity() {
         ResultActivity.pendingBitmap?.recycle()
         ResultActivity.pendingBitmap = null
         ResultActivity.pendingDetections = emptyList()
+        brightnessSeekBar.progress = 50
+        applyBrightness(50)
     }
 
     override fun onPause() {
