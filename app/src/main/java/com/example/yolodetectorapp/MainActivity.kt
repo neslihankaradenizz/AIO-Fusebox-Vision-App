@@ -1,6 +1,7 @@
 package com.example.yolodetectorapp
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -8,10 +9,10 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageButton
@@ -38,39 +39,96 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnFlash: ImageButton
     private lateinit var imageCapture: ImageCapture
     private lateinit var zoomSeekBar: SeekBar
+    private lateinit var brightnessSeekBar: SeekBar
+    private lateinit var btnBrightnessToggle: TextView
     private lateinit var tvOrientationWarning: TextView
     private lateinit var orientationListener: android.view.OrientationEventListener
     private lateinit var vehicleSpinner: Spinner
 
     private var camera: Camera? = null
     private var flashEnabled = false
+    private var brightnessVisible = false
     private val captureExecutor = Executors.newSingleThreadExecutor()
 
     companion object {
         val VEHICLE_LIST = listOf("Araç Seçiniz", "Novociti Life", "Novociti")
         const val EXTRA_VEHICLE_NAME = "vehicle_name"
+        private const val PREFS_NAME = "app_prefs"
+        private const val PREF_BRIGHTNESS = "brightness"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        previewView          = findViewById(R.id.previewView)
-        overlayView          = findViewById(R.id.overlayView)
-        roiView              = findViewById(R.id.roiView)
-        btnCapture           = findViewById(R.id.btnCapture)
-        btnFlash             = findViewById(R.id.btnFlash)
-        zoomSeekBar          = findViewById(R.id.zoomSeekBar)
-        tvOrientationWarning = findViewById(R.id.tvOrientationWarning)
-        vehicleSpinner       = findViewById(R.id.vehicleSpinner)
+        previewView           = findViewById(R.id.previewView)
+        overlayView           = findViewById(R.id.overlayView)
+        roiView               = findViewById(R.id.roiView)
+        btnCapture            = findViewById(R.id.btnCapture)
+        btnFlash              = findViewById(R.id.btnFlash)
+        zoomSeekBar           = findViewById(R.id.zoomSeekBar)
+        brightnessSeekBar     = findViewById(R.id.brightnessSeekBar)
+        btnBrightnessToggle   = findViewById(R.id.btnBrightnessToggle)
+        tvOrientationWarning  = findViewById(R.id.tvOrientationWarning)
+        vehicleSpinner        = findViewById(R.id.vehicleSpinner)
 
+        // Kaydedilmiş parlaklık değerini yükle
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedBrightness = prefs.getInt(PREF_BRIGHTNESS, 50)
+        brightnessSeekBar.progress = savedBrightness
+        applyBrightness(savedBrightness)
+
+        // Parlaklık toggle
+        btnBrightnessToggle.setOnClickListener {
+            brightnessVisible = !brightnessVisible
+            brightnessSeekBar.visibility = if (brightnessVisible) View.VISIBLE else View.GONE
+            btnBrightnessToggle.alpha = if (brightnessVisible) 1f else 0.5f
+        }
+
+        // Parlaklık seekbar
+        brightnessSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                applyBrightness(progress)
+                prefs.edit().putInt(PREF_BRIGHTNESS, progress).apply()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        })
+
+        // Zoom seekbar
+        zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                val zoomState = camera?.cameraInfo?.zoomState?.value ?: return
+                val zoom = zoomState.minZoomRatio +
+                        (zoomState.maxZoomRatio - zoomState.minZoomRatio) * (progress / 100f)
+                camera?.cameraControl?.setZoomRatio(zoom)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        })
+
+        // Flash
+        btnFlash.setOnClickListener {
+            flashEnabled = !flashEnabled
+            btnFlash.setImageResource(
+                if (flashEnabled) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+            )
+            if (::imageCapture.isInitialized) {
+                imageCapture.flashMode = if (flashEnabled)
+                    ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF
+            }
+        }
+
+        // Spinner
         val spinnerAdapter = object : ArrayAdapter<String>(
             this, android.R.layout.simple_spinner_item, VEHICLE_LIST
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = super.getView(position, convertView, parent)
                 (view as TextView).setTextColor(Color.WHITE)
-                view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
                 return view
             }
             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -84,29 +142,7 @@ class MainActivity : AppCompatActivity() {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         vehicleSpinner.adapter = spinnerAdapter
 
-        zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (!fromUser) return
-                val zoomState = camera?.cameraInfo?.zoomState?.value ?: return
-                val zoom = zoomState.minZoomRatio +
-                        (zoomState.maxZoomRatio - zoomState.minZoomRatio) * (progress / 100f)
-                camera?.cameraControl?.setZoomRatio(zoom)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
-
-        btnFlash.setOnClickListener {
-            flashEnabled = !flashEnabled
-            btnFlash.setImageResource(
-                if (flashEnabled) R.drawable.ic_flash_on else R.drawable.ic_flash_off
-            )
-            if (::imageCapture.isInitialized) {
-                imageCapture.flashMode = if (flashEnabled)
-                    ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF
-            }
-        }
-
+        // Orientation uyarısı
         orientationListener = object : android.view.OrientationEventListener(this@MainActivity) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
@@ -117,6 +153,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Kamera izni
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) {
             startCamera()
@@ -124,6 +161,7 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
         }
 
+        // Fotoğraf çek
         btnCapture.setOnClickListener {
             if (vehicleSpinner.selectedItemPosition == 0) {
                 Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
@@ -171,6 +209,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyBrightness(progress: Int) {
+        window.attributes = window.attributes.also {
+            it.screenBrightness = (progress / 100f).coerceIn(0.01f, 1.0f)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         orientationListener.enable()
@@ -183,6 +227,9 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         orientationListener.disable()
+        window.attributes = window.attributes.also {
+            it.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
     }
 
     override fun onDestroy() {
