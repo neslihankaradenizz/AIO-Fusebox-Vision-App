@@ -37,7 +37,7 @@ class FuseboxSelectionActivity : AppCompatActivity() {
         val ivDiagram2 = findViewById<ImageView>(R.id.ivDiagram2)
         val grid       = findViewById<GridLayout>(R.id.fuseboxGrid)
 
-        tvTitle.text = "$vehicleName — Fusebox Seçin"
+        tvTitle.text = "$vehicleName — Sigorta Kutusu Seçiniz"
 
         val (img1, img2) = getVehicleImages(vehicleName)
         ivDiagram1.setImageResource(img1)
