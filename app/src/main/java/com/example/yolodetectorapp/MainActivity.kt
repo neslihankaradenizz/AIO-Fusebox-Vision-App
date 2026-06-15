@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
     private var selectedFuseboxId: String? = null
     private var spinnerReady = false
     private var selectedVehiclePosition = 0
+    private lateinit var spinnerAdapter: ArrayAdapter<String>
     private var shouldResetOnResume = false
 
     companion object {
@@ -75,6 +76,7 @@ class MainActivity : AppCompatActivity() {
         // Spinner'ı sıfırla — böylece aynı araç tekrar seçilebilir
         spinnerReady = false
         vehicleSpinner.setSelection(0, false)
+        spinnerAdapter.notifyDataSetChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,13 +112,16 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
 
-        val spinnerAdapter = object : ArrayAdapter<String>(
+        spinnerAdapter = object : ArrayAdapter<String>(
             this, android.R.layout.simple_spinner_item, VEHICLE_LIST
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = super.getView(position, convertView, parent)
                 (view as TextView).setTextColor(Color.WHITE)
                 view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                if (selectedVehiclePosition > 0) {
+                    view.text = VEHICLE_LIST[selectedVehiclePosition]
+                }
                 return view
             }
             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -263,6 +268,7 @@ class MainActivity : AppCompatActivity() {
             tvSelectedFusebox.visibility = View.GONE
             vehicleSpinner.setSelection(0)
             spinnerReady = true
+            spinnerAdapter.notifyDataSetChanged()
             ResultActivity.pendingBitmap?.recycle()
             ResultActivity.pendingBitmap = null
             ResultActivity.pendingDetections = emptyList()
