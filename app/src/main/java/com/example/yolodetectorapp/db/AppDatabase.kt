@@ -10,7 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-@Database(entities = [ValidCombination::class], version = 8, exportSchema = false)
+@Database(entities = [ValidCombination::class], version = 9, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun combinationDao(): CombinationDao
 

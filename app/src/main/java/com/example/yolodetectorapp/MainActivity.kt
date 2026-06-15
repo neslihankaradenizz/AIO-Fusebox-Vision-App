@@ -1,17 +1,17 @@
 package com.example.yolodetectorapp
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.os.Bundle
 import android.view.ScaleGestureDetector
+import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageButton
@@ -19,6 +19,7 @@ import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -38,20 +39,37 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnFlash: ImageButton
     private lateinit var imageCapture: ImageCapture
     private lateinit var zoomSeekBar: SeekBar
-    private lateinit var brightnessSeekBar: SeekBar
-    private lateinit var btnBrightnessToggle: TextView
     private lateinit var tvOrientationWarning: TextView
     private lateinit var orientationListener: android.view.OrientationEventListener
     private lateinit var vehicleSpinner: Spinner
+    private lateinit var tvSelectedFusebox: TextView
+    private lateinit var btnSelectFusebox: Button
+    private lateinit var brightnessSeekBar: SeekBar
+    private lateinit var btnBrightnessToggle: TextView
 
     private var camera: Camera? = null
     private var flashEnabled = false
     private var brightnessVisible = false
     private val captureExecutor = Executors.newSingleThreadExecutor()
 
+    private var selectedFuseboxId: String? = null
+    private var selectedFuseboxIndex: Int = 0
+
     companion object {
         val VEHICLE_LIST = listOf("Araç Seçiniz", "Novociti Life", "Novociti")
         const val EXTRA_VEHICLE_NAME = "vehicle_name"
+        const val EXTRA_FUSEBOX_ID = "fusebox_id"
+    }
+
+    private val fuseboxSelectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            selectedFuseboxId = result.data?.getStringExtra(FuseboxSelectionActivity.RESULT_FUSEBOX_ID)
+            selectedFuseboxIndex = result.data?.getIntExtra(FuseboxSelectionActivity.RESULT_FUSEBOX_INDEX, 0) ?: 0
+            tvSelectedFusebox.text = "Seçili: $selectedFuseboxId"
+            tvSelectedFusebox.visibility = View.VISIBLE
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,10 +82,12 @@ class MainActivity : AppCompatActivity() {
         btnCapture           = findViewById(R.id.btnCapture)
         btnFlash             = findViewById(R.id.btnFlash)
         zoomSeekBar          = findViewById(R.id.zoomSeekBar)
-        brightnessSeekBar    = findViewById(R.id.brightnessSeekBar)
-        btnBrightnessToggle  = findViewById(R.id.btnBrightnessToggle)
         tvOrientationWarning = findViewById(R.id.tvOrientationWarning)
         vehicleSpinner       = findViewById(R.id.vehicleSpinner)
+        tvSelectedFusebox    = findViewById(R.id.tvSelectedFusebox)
+        btnSelectFusebox     = findViewById(R.id.btnSelectFusebox)
+        brightnessSeekBar    = findViewById(R.id.brightnessSeekBar)
+        btnBrightnessToggle  = findViewById(R.id.btnBrightnessToggle)
 
         brightnessSeekBar.progress = 50
         applyBrightness(50)
@@ -80,12 +100,42 @@ class MainActivity : AppCompatActivity() {
 
         brightnessSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (!fromUser) return
-                applyBrightness(progress)
+                if (fromUser) applyBrightness(progress)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar) {}
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
+
+        val spinnerAdapter = object : ArrayAdapter<String>(
+            this, android.R.layout.simple_spinner_item, VEHICLE_LIST
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.WHITE)
+                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                return view
+            }
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.WHITE)
+                view.setBackgroundColor(Color.parseColor("#222222"))
+                view.setPadding(24, 20, 24, 20)
+                return view
+            }
+        }
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        vehicleSpinner.adapter = spinnerAdapter
+
+        btnSelectFusebox.setOnClickListener {
+            if (vehicleSpinner.selectedItemPosition == 0) {
+                Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val selectedVehicle = VEHICLE_LIST[vehicleSpinner.selectedItemPosition]
+            val intent = Intent(this, FuseboxSelectionActivity::class.java)
+            intent.putExtra(FuseboxSelectionActivity.EXTRA_VEHICLE_NAME, selectedVehicle)
+            fuseboxSelectionLauncher.launch(intent)
+        }
 
         zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -110,26 +160,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val spinnerAdapter = object : ArrayAdapter<String>(
-            this, android.R.layout.simple_spinner_item, VEHICLE_LIST
-        ) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getView(position, convertView, parent)
-                (view as TextView).setTextColor(Color.WHITE)
-                view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
-                return view
-            }
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getDropDownView(position, convertView, parent)
-                (view as TextView).setTextColor(Color.WHITE)
-                view.setBackgroundColor(Color.parseColor("#222222"))
-                view.setPadding(24, 20, 24, 20)
-                return view
-            }
-        }
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        vehicleSpinner.adapter = spinnerAdapter
-
         orientationListener = object : android.view.OrientationEventListener(this@MainActivity) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
@@ -150,6 +180,10 @@ class MainActivity : AppCompatActivity() {
         btnCapture.setOnClickListener {
             if (vehicleSpinner.selectedItemPosition == 0) {
                 Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (selectedFuseboxId == null) {
+                Toast.makeText(this, "Lütfen önce fusebox seçiniz", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             btnCapture.isEnabled = false
@@ -176,6 +210,7 @@ class MainActivity : AppCompatActivity() {
                         ResultActivity.pendingBitmap = croppedBmp
                         val intent = Intent(this@MainActivity, ResultActivity::class.java)
                         intent.putExtra(EXTRA_VEHICLE_NAME, selectedVehicle)
+                        intent.putExtra(EXTRA_FUSEBOX_ID, selectedFuseboxId)
                         runOnUiThread { startActivity(intent) }
                     }
 
@@ -204,18 +239,18 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         orientationListener.enable()
         btnCapture.isEnabled = true
+        brightnessSeekBar.progress = 50
+        applyBrightness(50)
         ResultActivity.pendingBitmap?.recycle()
         ResultActivity.pendingBitmap = null
         ResultActivity.pendingDetections = emptyList()
-        brightnessSeekBar.progress = 50
-        applyBrightness(50)
     }
 
     override fun onPause() {
         super.onPause()
         orientationListener.disable()
         window.attributes = window.attributes.also {
-            it.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            it.screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
     }
 

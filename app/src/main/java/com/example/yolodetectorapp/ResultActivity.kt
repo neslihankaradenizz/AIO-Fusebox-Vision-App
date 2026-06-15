@@ -39,6 +39,7 @@ class ResultActivity : AppCompatActivity() {
         if (bmp == null || bmp.isRecycled) { finish(); return }
 
         val selectedVehicle = intent.getStringExtra(MainActivity.EXTRA_VEHICLE_NAME) ?: ""
+        val selectedFuseboxId = intent.getStringExtra(MainActivity.EXTRA_FUSEBOX_ID)
 
         val imageView  = findViewById<ImageView>(R.id.resultImageView)
         val boxOverlay = findViewById<BoxOverlayView>(R.id.resultBoxOverlay)
@@ -49,10 +50,14 @@ class ResultActivity : AppCompatActivity() {
         val btnTable   = findViewById<Button>(R.id.btnTable)
         val btnRetake  = findViewById<Button>(R.id.btnRetake)
 
-        tvVehicle.text = selectedVehicle
+        val fuseboxLabel = if (selectedFuseboxId != null) {
+            val idx = selectedFuseboxId.substringAfterLast("fb")
+            "$selectedVehicle — Fusebox $idx"
+        } else selectedVehicle
+        tvVehicle.text = fuseboxLabel
 
         imageView.setImageBitmap(bmp)
-        tvDebug.text = "🔍 Analiz ediliyor..."
+        tvDebug.text = "Analiz ediliyor..."
         tvDebug.setTextColor("#FFFFFF".toColorInt())
         btnMatch.isEnabled = false
 
@@ -73,13 +78,8 @@ class ResultActivity : AppCompatActivity() {
                 )
             }
 
-            if (detections.isEmpty()) {
-                tvDebug.text = "Tespit edilen sigorta sayısı: 0"
-                tvDebug.setTextColor("#CCCCCC".toColorInt())
-            } else {
-                tvDebug.text = "Tespit edilen sigorta sayısı: ${detections.size}"
-                tvDebug.setTextColor("#CCCCCC".toColorInt())
-            }
+            tvDebug.text = "Tespit edilen sigorta sayısı: ${detections.size}"
+            tvDebug.setTextColor("#CCCCCC".toColorInt())
 
             btnMatch.isEnabled = true
         }
@@ -91,14 +91,18 @@ class ResultActivity : AppCompatActivity() {
                 try {
                     val db = AppDatabase.getInstance(applicationContext)
                     val validEntries = withContext(Dispatchers.IO) {
-                        if (selectedVehicle.isNotEmpty())
-                            db.combinationDao().getByVehicleName(selectedVehicle)
-                        else
-                            db.combinationDao().getAll()
+                        when {
+                            selectedFuseboxId != null ->
+                                db.combinationDao().getByCombinationId(selectedFuseboxId)
+                            selectedVehicle.isNotEmpty() ->
+                                db.combinationDao().getByVehicleName(selectedVehicle)
+                            else ->
+                                db.combinationDao().getAll()
+                        }
                     }
 
                     val result = CombinationChecker.checkWithExpected(
-                        pendingDetections, validEntries, combinationId = null
+                        pendingDetections, validEntries, combinationId = selectedFuseboxId
                     )
 
                     val matchedId = result.matchedId
@@ -128,12 +132,7 @@ class ResultActivity : AppCompatActivity() {
         }
 
         btnTable.setOnClickListener {
-            FuseTableDialog(this,
-                pendingDetections,
-                lastExpectedClassIds,
-                lastExpectedCombinationId,
-                selectedVehicle ) { matched ->
-
+            FuseTableDialog(this, pendingDetections, lastExpectedClassIds, lastExpectedCombinationId, selectedVehicle) { matched ->
                 if (matched) {
                     tvResult.text = "OK"
                     tvResult.setTextColor("#00C853".toColorInt())
