@@ -2,7 +2,10 @@ package com.example.yolodetectorapp
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Matrix
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.widget.Button
 import android.widget.GridLayout
 import android.widget.ImageView
@@ -29,16 +32,19 @@ class FuseboxSelectionActivity : AppCompatActivity() {
 
         val vehicleName = intent.getStringExtra(EXTRA_VEHICLE_NAME) ?: ""
 
-        val tvTitle = findViewById<TextView>(R.id.tvTitle)
+        val tvTitle    = findViewById<TextView>(R.id.tvTitle)
         val ivDiagram1 = findViewById<ImageView>(R.id.ivDiagram1)
         val ivDiagram2 = findViewById<ImageView>(R.id.ivDiagram2)
-        val grid = findViewById<GridLayout>(R.id.fuseboxGrid)
+        val grid       = findViewById<GridLayout>(R.id.fuseboxGrid)
 
         tvTitle.text = "$vehicleName — Fusebox Seçin"
 
         val (img1, img2) = getVehicleImages(vehicleName)
         ivDiagram1.setImageResource(img1)
         ivDiagram2.setImageResource(img2)
+
+        setupZoomableImage(ivDiagram1)
+        setupZoomableImage(ivDiagram2)
 
         lifecycleScope.launch {
             val fuseboxIds = withContext(Dispatchers.IO) {
@@ -72,6 +78,57 @@ class FuseboxSelectionActivity : AppCompatActivity() {
                 }
                 grid.addView(btn)
             }
+        }
+    }
+
+    private fun setupZoomableImage(imageView: ImageView) {
+        imageView.scaleType = ImageView.ScaleType.MATRIX
+        imageView.post {
+            val drawable = imageView.drawable ?: return@post
+            val dw = drawable.intrinsicWidth.toFloat()
+            val dh = drawable.intrinsicHeight.toFloat()
+            val vw = imageView.width.toFloat()
+            val vh = imageView.height.toFloat()
+            val scale = minOf(vw / dw, vh / dh)
+            val initMatrix = Matrix()
+            initMatrix.setScale(scale, scale)
+            initMatrix.postTranslate((vw - dw * scale) / 2f, (vh - dh * scale) / 2f)
+            imageView.imageMatrix = initMatrix
+        }
+
+        var lastX = 0f
+        var lastY = 0f
+        var isDragging = false
+
+        val scaleDetector = ScaleGestureDetector(this,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    val m = Matrix(imageView.imageMatrix)
+                    m.postScale(detector.scaleFactor, detector.scaleFactor,
+                        detector.focusX, detector.focusY)
+                    imageView.imageMatrix = m
+                    return true
+                }
+            })
+
+        imageView.setOnTouchListener { _, event ->
+            scaleDetector.onTouchEvent(event)
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    lastX = event.x; lastY = event.y; isDragging = true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isDragging && !scaleDetector.isInProgress) {
+                        val m = Matrix(imageView.imageMatrix)
+                        m.postTranslate(event.x - lastX, event.y - lastY)
+                        imageView.imageMatrix = m
+                        lastX = event.x; lastY = event.y
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> isDragging = false
+            }
+            imageView.performClick()
+            true
         }
     }
 

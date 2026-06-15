@@ -22,6 +22,32 @@
         android:layout_height="@dimen/roi_height"
         android:layout_gravity="center" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <Spinner
+            android:id="@+id/vehicleSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="#AA000000"
+            android:padding="8dp"
+            android:popupBackground="#222222"/>
+
+        <TextView
+            android:id="@+id/tvSelectedFusebox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="6dp"
+            android:textColor="#FFCCCC"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:background="#88000000"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -66,46 +92,6 @@
         android:layout_marginBottom="10dp"
         android:layout_marginStart="@dimen/btn_margin_side"
         android:layout_marginEnd="@dimen/btn_margin_side">
-
-        <Spinner
-            android:id="@+id/vehicleSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginBottom="6dp"
-            android:background="#AA000000"
-            android:padding="8dp"
-            android:popupBackground="#222222"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="6dp">
-
-            <Button
-                android:id="@+id/btnSelectFusebox"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:text="Fusebox Seç"
-                android:textColor="#FFFFFF"
-                android:textSize="13sp"
-                android:backgroundTint="#CC333333"
-                android:layout_marginEnd="6dp"/>
-
-            <TextView
-                android:id="@+id/tvSelectedFusebox"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:textColor="#FFDD00"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:background="#AA000000"
-                android:visibility="gone"/>
-
-        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"

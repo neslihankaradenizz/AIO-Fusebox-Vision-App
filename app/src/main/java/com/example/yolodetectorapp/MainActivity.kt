@@ -12,6 +12,7 @@ import android.view.ScaleGestureDetector
 import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageButton
@@ -42,10 +43,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvOrientationWarning: TextView
     private lateinit var orientationListener: android.view.OrientationEventListener
     private lateinit var vehicleSpinner: Spinner
-    private lateinit var tvSelectedFusebox: TextView
-    private lateinit var btnSelectFusebox: Button
     private lateinit var brightnessSeekBar: SeekBar
     private lateinit var btnBrightnessToggle: TextView
+    private lateinit var tvSelectedFusebox: TextView
 
     private var camera: Camera? = null
     private var flashEnabled = false
@@ -53,7 +53,8 @@ class MainActivity : AppCompatActivity() {
     private val captureExecutor = Executors.newSingleThreadExecutor()
 
     private var selectedFuseboxId: String? = null
-    private var selectedFuseboxIndex: Int = 0
+    private var spinnerReady = false
+    private var shouldResetOnResume = false
 
     companion object {
         val VEHICLE_LIST = listOf("Araç Seçiniz", "Novociti Life", "Novociti")
@@ -66,9 +67,12 @@ class MainActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             selectedFuseboxId = result.data?.getStringExtra(FuseboxSelectionActivity.RESULT_FUSEBOX_ID)
-            selectedFuseboxIndex = result.data?.getIntExtra(FuseboxSelectionActivity.RESULT_FUSEBOX_INDEX, 0) ?: 0
-            tvSelectedFusebox.text = "Seçili: $selectedFuseboxId"
+            tvSelectedFusebox.text = "Seçilen Fusebox: $selectedFuseboxId"
             tvSelectedFusebox.visibility = View.VISIBLE
+        } else {
+            vehicleSpinner.setSelection(0)
+            selectedFuseboxId = null
+            tvSelectedFusebox.visibility = View.GONE
         }
     }
 
@@ -84,10 +88,9 @@ class MainActivity : AppCompatActivity() {
         zoomSeekBar          = findViewById(R.id.zoomSeekBar)
         tvOrientationWarning = findViewById(R.id.tvOrientationWarning)
         vehicleSpinner       = findViewById(R.id.vehicleSpinner)
-        tvSelectedFusebox    = findViewById(R.id.tvSelectedFusebox)
-        btnSelectFusebox     = findViewById(R.id.btnSelectFusebox)
         brightnessSeekBar    = findViewById(R.id.brightnessSeekBar)
         btnBrightnessToggle  = findViewById(R.id.btnBrightnessToggle)
+        tvSelectedFusebox    = findViewById(R.id.tvSelectedFusebox)
 
         brightnessSeekBar.progress = 50
         applyBrightness(50)
@@ -126,15 +129,20 @@ class MainActivity : AppCompatActivity() {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         vehicleSpinner.adapter = spinnerAdapter
 
-        btnSelectFusebox.setOnClickListener {
-            if (vehicleSpinner.selectedItemPosition == 0) {
-                Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+        vehicleSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                if (!spinnerReady) { spinnerReady = true; return }
+                if (position == 0) {
+                    selectedFuseboxId = null
+                    tvSelectedFusebox.visibility = View.GONE
+                    return
+                }
+                val selectedVehicle = VEHICLE_LIST[position]
+                val intent = Intent(this@MainActivity, FuseboxSelectionActivity::class.java)
+                intent.putExtra(FuseboxSelectionActivity.EXTRA_VEHICLE_NAME, selectedVehicle)
+                fuseboxSelectionLauncher.launch(intent)
             }
-            val selectedVehicle = VEHICLE_LIST[vehicleSpinner.selectedItemPosition]
-            val intent = Intent(this, FuseboxSelectionActivity::class.java)
-            intent.putExtra(FuseboxSelectionActivity.EXTRA_VEHICLE_NAME, selectedVehicle)
-            fuseboxSelectionLauncher.launch(intent)
+            override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -165,7 +173,7 @@ class MainActivity : AppCompatActivity() {
                 if (orientation == ORIENTATION_UNKNOWN) return
                 val isLandscape = orientation in 45..135 || orientation in 225..315
                 tvOrientationWarning.visibility =
-                    if (isLandscape) android.view.View.VISIBLE else android.view.View.GONE
+                    if (isLandscape) View.VISIBLE else View.GONE
                 btnCapture.isEnabled = !isLandscape
             }
         }
@@ -211,7 +219,10 @@ class MainActivity : AppCompatActivity() {
                         val intent = Intent(this@MainActivity, ResultActivity::class.java)
                         intent.putExtra(EXTRA_VEHICLE_NAME, selectedVehicle)
                         intent.putExtra(EXTRA_FUSEBOX_ID, selectedFuseboxId)
-                        runOnUiThread { startActivity(intent) }
+                        runOnUiThread {
+                            shouldResetOnResume = true
+                            startActivity(intent)
+                        }
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -241,9 +252,17 @@ class MainActivity : AppCompatActivity() {
         btnCapture.isEnabled = true
         brightnessSeekBar.progress = 50
         applyBrightness(50)
-        ResultActivity.pendingBitmap?.recycle()
-        ResultActivity.pendingBitmap = null
-        ResultActivity.pendingDetections = emptyList()
+
+        if (shouldResetOnResume) {
+            shouldResetOnResume = false
+            spinnerReady = false
+            vehicleSpinner.setSelection(0)
+            selectedFuseboxId = null
+            tvSelectedFusebox.visibility = View.GONE
+            ResultActivity.pendingBitmap?.recycle()
+            ResultActivity.pendingBitmap = null
+            ResultActivity.pendingDetections = emptyList()
+        }
     }
 
     override fun onPause() {
@@ -315,7 +334,7 @@ class MainActivity : AppCompatActivity() {
             )
 
             val hasFlash = camera?.cameraInfo?.hasFlashUnit() ?: false
-            btnFlash.visibility = if (hasFlash) android.view.View.VISIBLE else android.view.View.GONE
+            btnFlash.visibility = if (hasFlash) View.VISIBLE else View.GONE
 
             setupPinchToZoom()
 
