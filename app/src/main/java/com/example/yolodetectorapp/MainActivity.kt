@@ -4,13 +4,19 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.ScaleGestureDetector
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +27,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,9 +40,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var zoomSeekBar: SeekBar
     private lateinit var tvOrientationWarning: TextView
     private lateinit var orientationListener: android.view.OrientationEventListener
+    private lateinit var vehicleSpinner: Spinner
 
     private var camera: Camera? = null
     private var flashEnabled = false
+    private val captureExecutor = Executors.newSingleThreadExecutor()
+
+    companion object {
+        val VEHICLE_LIST = listOf("Araç Seçiniz", "Novociti Life", "Novociti")
+        const val EXTRA_VEHICLE_NAME = "vehicle_name"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,8 +62,28 @@ class MainActivity : AppCompatActivity() {
         btnFlash             = findViewById(R.id.btnFlash)
         zoomSeekBar          = findViewById(R.id.zoomSeekBar)
         tvOrientationWarning = findViewById(R.id.tvOrientationWarning)
+        vehicleSpinner       = findViewById(R.id.vehicleSpinner)
 
-        // Zoom seekbar
+        val spinnerAdapter = object : ArrayAdapter<String>(
+            this, android.R.layout.simple_spinner_item, VEHICLE_LIST
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.WHITE)
+                view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                return view
+            }
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.WHITE)
+                view.setBackgroundColor(Color.parseColor("#222222"))
+                view.setPadding(24, 20, 24, 20)
+                return view
+            }
+        }
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        vehicleSpinner.adapter = spinnerAdapter
+
         zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (!fromUser) return
@@ -62,7 +96,6 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
 
-        // Flash
         btnFlash.setOnClickListener {
             flashEnabled = !flashEnabled
             btnFlash.setImageResource(
@@ -74,7 +107,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Orientation uyarısı
         orientationListener = object : android.view.OrientationEventListener(this@MainActivity) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
@@ -85,7 +117,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Kamera izni
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) {
             startCamera()
@@ -93,11 +124,16 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
         }
 
-        // Fotoğraf çek
         btnCapture.setOnClickListener {
+            if (vehicleSpinner.selectedItemPosition == 0) {
+                Toast.makeText(this, "Lütfen önce araç tipini seçiniz", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             btnCapture.isEnabled = false
+            val selectedVehicle = VEHICLE_LIST[vehicleSpinner.selectedItemPosition]
+            val roi = calcNormalizedRoi()
             imageCapture.takePicture(
-                ContextCompat.getMainExecutor(this),
+                captureExecutor,
                 object : ImageCapture.OnImageCapturedCallback() {
                     override fun onCaptureSuccess(image: ImageProxy) {
                         val bmp = image.toBitmap().let { raw ->
@@ -111,21 +147,24 @@ class MainActivity : AppCompatActivity() {
                         }
                         image.close()
 
-                        val roi = calcNormalizedRoi()
                         val croppedBmp = cropToRoi(bmp, roi)
                         bmp.recycle()
 
                         ResultActivity.pendingBitmap = croppedBmp
-                        startActivity(Intent(this@MainActivity, ResultActivity::class.java))
+                        val intent = Intent(this@MainActivity, ResultActivity::class.java)
+                        intent.putExtra(EXTRA_VEHICLE_NAME, selectedVehicle)
+                        runOnUiThread { startActivity(intent) }
                     }
 
                     override fun onError(exception: ImageCaptureException) {
-                        btnCapture.isEnabled = true
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Hata: ${exception.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        runOnUiThread {
+                            btnCapture.isEnabled = true
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Hata: ${exception.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             )
@@ -148,6 +187,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        captureExecutor.shutdown()
         YoloDetector.releaseInstance()
     }
 

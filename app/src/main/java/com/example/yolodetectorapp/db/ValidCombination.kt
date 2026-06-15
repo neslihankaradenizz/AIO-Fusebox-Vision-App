@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "valid_combinations")
 data class ValidCombination(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val combinationId: String,   // ör. "fusebox_v3"
-    val objectIds: String        // ör. "8,5,1,8,2,2,3,6,4,4,1,5,8,6,7,8,7,8"
+    val combinationId: String,
+    val vehicleName: String,
+    val objectIds: String
 )

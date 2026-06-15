@@ -38,25 +38,27 @@ class ResultActivity : AppCompatActivity() {
         val bmp = pendingBitmap
         if (bmp == null || bmp.isRecycled) { finish(); return }
 
+        val selectedVehicle = intent.getStringExtra(MainActivity.EXTRA_VEHICLE_NAME) ?: ""
+
         val imageView  = findViewById<ImageView>(R.id.resultImageView)
         val boxOverlay = findViewById<BoxOverlayView>(R.id.resultBoxOverlay)
         val tvResult   = findViewById<TextView>(R.id.tvResult)
         val tvDebug    = findViewById<TextView>(R.id.tvDebug)
+        val tvVehicle  = findViewById<TextView>(R.id.tvVehicleName)
         val btnMatch   = findViewById<Button>(R.id.btnMatch)
         val btnTable   = findViewById<Button>(R.id.btnTable)
         val btnRetake  = findViewById<Button>(R.id.btnRetake)
 
+        tvVehicle.text = selectedVehicle
 
         imageView.setImageBitmap(bmp)
         tvDebug.text = "🔍 Analiz ediliyor..."
         tvDebug.setTextColor("#FFFFFF".toColorInt())
         btnMatch.isEnabled = false
 
-        // FIX 5: btnRetake listener burada set edilmeli, btnMatch içinde değil
         btnRetake.setOnClickListener { finish() }
 
         lifecycleScope.launch {
-            // FIX 1: Detector kullandıktan sonra kapatılıyor
             val detections = withContext(Dispatchers.Default) {
                 val detector = YoloDetector(this@ResultActivity)
                 detector.detect(bmp)
@@ -83,14 +85,16 @@ class ResultActivity : AppCompatActivity() {
         }
 
         btnMatch.setOnClickListener {
-            // FIX 2: Çift tıklamayı engelle
             btnMatch.isEnabled = false
 
             lifecycleScope.launch {
                 try {
                     val db = AppDatabase.getInstance(applicationContext)
                     val validEntries = withContext(Dispatchers.IO) {
-                        db.combinationDao().getAll()
+                        if (selectedVehicle.isNotEmpty())
+                            db.combinationDao().getByVehicleName(selectedVehicle)
+                        else
+                            db.combinationDao().getAll()
                     }
 
                     val result = CombinationChecker.checkWithExpected(
@@ -118,13 +122,18 @@ class ResultActivity : AppCompatActivity() {
 
                 } catch (e: Exception) {
                     android.util.Log.e("YOLO", "Eşleştirme hatası: ${e.message}", e)
-                    btnMatch.isEnabled = true  // hata olursa tekrar aktif et
+                    btnMatch.isEnabled = true
                 }
             }
         }
 
         btnTable.setOnClickListener {
-            FuseTableDialog(this, pendingDetections, lastExpectedClassIds, lastExpectedCombinationId) { matched ->
+            FuseTableDialog(this,
+                pendingDetections,
+                lastExpectedClassIds,
+                lastExpectedCombinationId,
+                selectedVehicle ) { matched ->
+
                 if (matched) {
                     tvResult.text = "OK"
                     tvResult.setTextColor("#00C853".toColorInt())

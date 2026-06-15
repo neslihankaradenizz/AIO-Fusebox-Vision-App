@@ -27,6 +27,7 @@ class FuseTableDialog(
     private val detections: List<Detection>,
     private val expectedClassIds: List<Int> = emptyList(),
     private val expectedCombinationId: String? = null,
+    private val vehicleName: String = "",
     private val onRematchResult: ((matched: Boolean) -> Unit)? = null
 ) : Dialog(context) {
 
@@ -300,7 +301,10 @@ class FuseTableDialog(
             try {
                 val db = AppDatabase.getInstance(context)
                 val validEntries = withContext(Dispatchers.IO) {
-                    db.combinationDao().getAll()
+                    if (vehicleName.isNotEmpty())
+                        db.combinationDao().getByVehicleName(vehicleName)
+                    else
+                        db.combinationDao().getAll()
                 }
                 val matchedId = CombinationChecker.check(editedDetections, validEntries, null)
 

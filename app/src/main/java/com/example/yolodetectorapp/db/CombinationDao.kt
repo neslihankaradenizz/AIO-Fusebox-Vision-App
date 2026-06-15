@@ -15,6 +15,9 @@ interface CombinationDao {
     @Query("SELECT * FROM valid_combinations WHERE combinationId = :combId")
     suspend fun getByCombinationId(combId: String): List<ValidCombination>
 
+    @Query("SELECT * FROM valid_combinations WHERE vehicleName = :name")
+    suspend fun getByVehicleName(name: String): List<ValidCombination>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(combination: ValidCombination)
 

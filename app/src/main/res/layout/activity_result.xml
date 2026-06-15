@@ -27,6 +27,20 @@
         app:layout_constraintEnd_toEndOf="@id/resultImageView"/>
 
     <TextView
+        android:id="@+id/tvVehicleName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="6dp"
+        android:textSize="@dimen/text_debug"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:background="#CC000000"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
         android:id="@+id/tvDebug"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

@@ -14,6 +14,7 @@
   "combinations": [
     {
       "id": "fusebox_v5",
+      "vehicleName": "Novociti Life",
       "total_positions": 18,
       "expected": [
         {"position": 1,  "classId": 6, "label": "3_amp", "column": "J2"},
@@ -40,6 +41,7 @@
 
     {
       "id": "fusebox_v6",
+      "vehicleName": "Novociti",
       "total_positions": 18,
       "expected": [
         {"position": 1,  "classId": 5, "label": "30_amp",  "column": "left"},
@@ -61,6 +63,33 @@
         {"position": 16, "classId": 2, "label": "20_amp",  "column": "right"},
         {"position": 17, "classId": 1, "label": "15_amp",  "column": "right"},
         {"position": 18, "classId": 8, "label": "7.5_amp", "column": "right"}
+      ]
+    },
+
+    {
+      "id": "fusebox_v7",
+      "vehicleName": "Novociti",
+      "total_positions": 18,
+      "expected": [
+        {"position": 1,  "classId": 6, "label": "3_amp", "column": "J2"},
+        {"position": 2,  "classId": 3, "label": "25_amp",  "column": "J2"},
+        {"position": 3,  "classId": 5, "label": "30_amp",  "column": "J2"},
+        {"position": 4,  "classId": 4, "label": "2_amp", "column": "J2"},
+        {"position": 5,  "classId": 2, "label": "20_amp",  "column": "J2"},
+        {"position": 6,  "classId": 1, "label": "15_amp",  "column": "J2"},
+        {"position": 7,  "classId": 9, "label": "empty",  "column": "J2"},
+        {"position": 8,  "classId": 0, "label": "10_amp",   "column": "J2"},
+        {"position": 9,  "classId": 7, "label": "5_amp",   "column": "J2"},
+
+        {"position": 10, "classId": 8, "label": "7.5_amp",   "column": "J3"},
+        {"position": 11, "classId": 8, "label": "7.5_amp",  "column": "J3"},
+        {"position": 12, "classId": 7, "label": "5_amp",  "column": "J3"},
+        {"position": 13, "classId": 9, "label": "empty", "column": "J3"},
+        {"position": 14, "classId": 1, "label": "15_amp",   "column": "J3"},
+        {"position": 15, "classId": 0, "label": "10_amp",   "column": "J3"},
+        {"position": 16, "classId": 5, "label": "30_amp", "column": "J3"},
+        {"position": 17, "classId": 2, "label": "20_amp",   "column": "J3"},
+        {"position": 18, "classId": 6, "label": "3_amp", "column": "J3"}
       ]
     }
   ]

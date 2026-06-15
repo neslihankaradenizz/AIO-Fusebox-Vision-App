@@ -4,18 +4,20 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-@Database(entities = [ValidCombination::class], version = 7, exportSchema = false)
+@Database(entities = [ValidCombination::class], version = 8, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun combinationDao(): CombinationDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+        private val dbScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -29,7 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
 
                 INSTANCE = instance
 
-                GlobalScope.launch(Dispatchers.IO) {
+                dbScope.launch {
                     val dao = instance.combinationDao()
                     if (dao.getAll().isEmpty()) {
                         seedDatabase(context, instance)
@@ -53,6 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
                 for (i in 0 until combinations.length()) {
                     val combo = combinations.getJSONObject(i)
                     val combinationId = combo.getString("id")
+                    val vehicleName = combo.optString("vehicleName", combinationId)
                     val expected = combo.getJSONArray("expected")
 
                     val positionCount = expected.length()
@@ -71,6 +74,7 @@ abstract class AppDatabase : RoomDatabase() {
                         db.combinationDao().insert(
                             ValidCombination(
                                 combinationId = combinationId,
+                                vehicleName = vehicleName,
                                 objectIds = objectIdsString
                             )
                         )

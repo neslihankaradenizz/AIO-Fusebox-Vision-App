@@ -70,6 +70,15 @@
         android:layout_marginStart="@dimen/btn_margin_side"
         android:layout_marginEnd="@dimen/btn_margin_side">
 
+        <Spinner
+            android:id="@+id/vehicleSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="10dp"
+            android:background="#AA000000"
+            android:padding="8dp"
+            android:popupBackground="#222222"/>
+
         <SeekBar
             android:id="@+id/zoomSeekBar"
             android:layout_width="match_parent"
