@@ -28,39 +28,59 @@
             android:orientation="vertical"
             android:padding="12dp">
 
-            <ImageView
-                android:id="@+id/ivDiagram1"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginBottom="8dp"
-                android:scaleType="fitCenter"
-                android:background="#1E1E1E"
-                android:src="@drawable/placeholder_fusebox"/>
+                android:layout_height="220dp"
+                android:layout_marginBottom="8dp">
 
-            <ImageView
-                android:id="@+id/ivDiagram2"
+                <ImageView
+                    android:id="@+id/ivDiagram1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#1E1E1E"
+                    android:src="@drawable/placeholder_fusebox"/>
+
+                <com.example.yolodetectorapp.RegionMarkerView
+                    android:id="@+id/overlayDiagram1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+
+            </FrameLayout>
+
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginBottom="12dp"
-                android:scaleType="fitCenter"
-                android:background="#1E1E1E"
-                android:src="@drawable/placeholder_fusebox"/>
+                android:layout_height="220dp"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/ivDiagram2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#1E1E1E"
+                    android:src="@drawable/placeholder_fusebox"/>
+
+                <com.example.yolodetectorapp.RegionMarkerView
+                    android:id="@+id/overlayDiagram2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+
+            </FrameLayout>
 
             <TextView
+                android:id="@+id/tvFuseboxLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kontrol edilecek sigorta kutusunu seçiniz:"
+                android:text="Görselde bir bölgeye (kırmızı daire) dokunun"
                 android:textColor="#CCCCCC"
                 android:textSize="14sp"
                 android:layout_marginBottom="10dp"/>
 
-            <GridLayout
-                android:id="@+id/fuseboxGrid"
+            <LinearLayout
+                android:id="@+id/fuseboxButtonPanel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:columnCount="4"
-                android:rowCount="2"
-                android:useDefaultMargins="true"/>
+                android:orientation="horizontal"
+                android:visibility="gone"/>
 
         </LinearLayout>
 

@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedFuseboxId: String? = null
     private var spinnerReady = false
+    private var selectedVehiclePosition = 0
     private var shouldResetOnResume = false
 
     companion object {
@@ -69,11 +70,10 @@ class MainActivity : AppCompatActivity() {
             selectedFuseboxId = result.data?.getStringExtra(FuseboxSelectionActivity.RESULT_FUSEBOX_ID)
             tvSelectedFusebox.text = "Seçilen Fusebox: $selectedFuseboxId"
             tvSelectedFusebox.visibility = View.VISIBLE
-        } else {
-            vehicleSpinner.setSelection(0)
-            selectedFuseboxId = null
-            tvSelectedFusebox.visibility = View.GONE
         }
+        // Araç adını geri yükle (OK veya iptal fark etmez)
+        spinnerReady = false
+        vehicleSpinner.setSelection(selectedVehiclePosition, false)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -135,8 +135,10 @@ class MainActivity : AppCompatActivity() {
                 if (position == 0) {
                     selectedFuseboxId = null
                     tvSelectedFusebox.visibility = View.GONE
+                    selectedVehiclePosition = 0
                     return
                 }
+                selectedVehiclePosition = position
                 val selectedVehicle = VEHICLE_LIST[position]
                 val intent = Intent(this@MainActivity, FuseboxSelectionActivity::class.java)
                 intent.putExtra(FuseboxSelectionActivity.EXTRA_VEHICLE_NAME, selectedVehicle)
@@ -145,6 +147,11 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
+        vehicleSpinner.setOnTouchListener { _, _ ->
+            spinnerReady = false
+            vehicleSpinner.setSelection(0, false)
+            false
+        }
         zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (!fromUser) return
