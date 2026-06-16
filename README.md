@@ -1,18 +1,20 @@
+```mermaid
 flowchart TD
-    A["Kamera Görüntüsü<br/>(MainActivity)"] --> B["ROI'ye göre kırpma<br/>cropToRoi()"]
-    B --> C["ResultActivity'ye<br/>pendingBitmap aktarımı"]
-    C --> D["Letterbox ölçekleme<br/>1024×1024 + dolgu"]
-    D --> E["RGB → normalize float<br/>bitmapToByteBuffer()"]
-    E --> F["TFLite Inference<br/>interpreter.run()"]
+    A["Kamera Görüntüsü (MainActivity)"] --> B["ROI'ye göre kırpma cropToRoi()"]
+    B --> C["ResultActivity'ye pendingBitmap aktarımı"]
+    C --> D["Letterbox ölçekleme 1024×1024 + dolgu"]
+    D --> E["RGB → normalize float bitmapToByteBuffer()"]
+    E --> F["TFLite Inference interpreter.run()"]
     F --> G["Çıktı: [1,10,21504] tensör"]
-    G --> H["parseOutput()<br/>skor eşiği + koordinat düzeltme"]
-    H --> I["applyNMS()<br/>çakışan kutuları eleme"]
+    G --> H["parseOutput() skor eşiği + koordinat düzeltme"]
+    H --> I["applyNMS() çakışan kutuları eleme"]
     I --> J["List&lt;Detection&gt;"]
-    J --> K["BoxOverlayView<br/>görselleştirme"]
-    J --> L["CombinationChecker<br/>sütun ayrımı + sıralama"]
+    J --> K["BoxOverlayView görselleştirme"]
+    J --> L["CombinationChecker sütun ayrımı + sıralama"]
     L --> M["18 elemanlı dizi"]
-    M --> N{"Veritabanı<br/>karşılaştırması"}
+    M --> N{"Veritabanı karşılaştırması"}
     N -->|Eşleşme var| O["OK (yeşil)"]
     N -->|Eşleşme yok| P["NOK (kırmızı)"]
-    O --> Q["FuseTableDialog<br/>(opsiyonel inceleme)"]
+    O --> Q["FuseTableDialog (opsiyonel inceleme)"]
     P --> Q
+```
