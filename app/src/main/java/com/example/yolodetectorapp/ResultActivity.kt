@@ -97,7 +97,7 @@ class ResultActivity : AppCompatActivity() {
                             selectedVehicle.isNotEmpty() ->
                                 db.combinationDao().getByVehicleName(selectedVehicle)
                             else ->
-                                db.combinationDao().getAll()
+                                emptyList()
                         }
                     }
 
